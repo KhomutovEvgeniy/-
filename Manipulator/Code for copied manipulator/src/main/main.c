@@ -1,6 +1,10 @@
 #include "stm32f10x.h"
 #include "stm32f10x_gpio.h"
 #include "stm32f10x_rcc.h"
+#include "stm32f10x_usart.h"
+#include "stm32f10x_adc.h"
+#include "misc.h"
+
 
 uint32_t a = 0;
 void delay(uint32_t i) 
@@ -12,7 +16,7 @@ void delay(uint32_t i)
 
 int main(void)
 {
-  
+ NVIC_InitTypeDef NVIC_InitStructure;
 //  int i;
 //  /* Initialize Leds mounted on STM32 board */
 //  GPIO_InitTypeDef  GPIO_InitStructure;
