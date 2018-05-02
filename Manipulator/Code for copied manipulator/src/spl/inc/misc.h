@@ -56,7 +56,7 @@ typedef struct
 
   uint8_t NVIC_IRQChannelPreemptionPriority;  /*!< Specifies the pre-emption priority for the IRQ channel
                                                    specified in NVIC_IRQChannel. This parameter can be a value
-                                                   between 0 and 15 as described in the table @ref NVIC_Priority_Table */
+                                                   between 0 and 15 as described in the table @ref c_Table */
 
   uint8_t NVIC_IRQChannelSubPriority;         /*!< Specifies the subpriority level for the IRQ channel specified
                                                    in NVIC_IRQChannel. This parameter can be a value
