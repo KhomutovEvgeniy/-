@@ -14,7 +14,7 @@
 #define RES_4_PIN GPIO_Pin_1
 #define RES_5_PIN GPIO_Pin_0
 
-volatile uint16_t ADC1buffer[] = {0xAAAA, 0xAAAA, 0xAAAA, 0xAAAA, 0xAAAA}; //Создание массива (буфера) значений, считывающихся с резисторов
+volatile uint16_t ADC1buffer[] = {1, 2, 3, 4, 5}; //Создание массива (буфера) значений, считывающихся с резисторов
 volatile char buffer[80] = {'\0'};
 __IO uint16_t Counter = 0;
 __IO uint16_t TempValue;
@@ -348,7 +348,7 @@ delay(a); //Всё повторяется...
       
   }*/
   
-SetSysClockTo72();
+//SetSysClockTo72();
  
     const unsigned char mytext[] = " Hello World!\r\n";
  
@@ -389,6 +389,7 @@ SetSysClockTo72();
             FLAG_ECHO = 0;
         }
     }
+    
 }
 /*
 void DMA1_Channel1_IRQHandler (void)
