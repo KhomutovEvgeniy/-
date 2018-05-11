@@ -15,8 +15,6 @@
 #define RES_5_PIN GPIO_Pin_0
 /*
 volatile char buffer[50] = {'\0'};
-__IO uint16_t Counter = 0;
-__IO uint16_t TempValue;
 volatile short FLAG_ECHO = 0;
 */
 /*
@@ -29,31 +27,32 @@ void TIM4_IRQHandler (void)
   }
 }
 */
+
 void usart_init (void)
 {
-  /* Enable USART2 and GPIOA clock */
+  /* Enable USART1 and GPIOA clock */
   
   RCC_APB2PeriphClockCmd (RCC_APB2Periph_GPIOA, ENABLE); //Разрешить тактирование ножек Rx и Tx
-  RCC_APB1PeriphClockCmd (RCC_APB1Periph_USART2, ENABLE); //Разрешить тактирование USART2
+  RCC_APB2PeriphClockCmd (RCC_APB2Periph_USART1, ENABLE); //Разрешить тактирование USART1
   /* Configure the GPIOs */
   GPIO_InitTypeDef GPIO_InitStructure;
 
-  /* Configure USART2 Tx (PA.02) as alternate function push-pull */
-  GPIO_InitStructure.GPIO_Pin = GPIO_Pin_2;
+  /* Configure USART1 Tx (PA.09) as alternate function push-pull */
+  GPIO_InitStructure.GPIO_Pin = GPIO_Pin_9;
   GPIO_InitStructure.GPIO_Mode = GPIO_Mode_AF_PP;
   GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;
   GPIO_Init(GPIOA, &GPIO_InitStructure);
 
-  /* Configure USART2 Rx (PA.03) as input floating */
-  GPIO_InitStructure.GPIO_Pin = GPIO_Pin_3;
+  /* Configure USART1 Rx (PA.10) as input floating */
+  GPIO_InitStructure.GPIO_Pin = GPIO_Pin_10;
   GPIO_InitStructure.GPIO_Mode = GPIO_Mode_IN_FLOATING;
   GPIO_Init(GPIOA, &GPIO_InitStructure);
 
-  /* Configure the USART2 */
+  /* Configure the USART1 */
   USART_InitTypeDef USART_InitStructure;
 
-/* USART2 configuration ------------------------------------------------------*/
-  /* USART2 configured as follow:
+/* USART1 configuration ------------------------------------------------------*/
+  /* USART1 configured as follow:
         - BaudRate = 115200 baud
         - Word Length = 8 Bits
         - One Stop Bit
@@ -72,43 +71,85 @@ void usart_init (void)
   USART_InitStructure.USART_Parity = USART_Parity_No;
   USART_InitStructure.USART_HardwareFlowControl = USART_HardwareFlowControl_None;
   USART_InitStructure.USART_Mode = USART_Mode_Rx | USART_Mode_Tx;
-  USART_Init(USART2, &USART_InitStructure);
-  USART_Cmd(USART2, ENABLE); //Enable USART2
+  USART_Init(USART1, &USART_InitStructure);
+  USART_Cmd(USART1, ENABLE); //Enable USART1
 }
 
-void USART_Send(const unsigned char *pucBuffer)
+
+volatile uint32_t ADCbuffer[5] = {1280, 1023, 1500, 2000, 500}; //Создание массива (буфера) значений, считывающихся с резисторов
+
+volatile uint16_t counter = 0;
+/*
+void USART_Send(uint16_t * pucBuffer)
 {
-//  while (*pucBuffer)
-//  {
-//      USART_SendData(USART2, *pucBuffer++);
-//      while(USART_GetFlagStatus(USART2, USART_FLAG_TC) == RESET)
-//      {
-//      }
-//  }
-  char s = 'e';
-  while( ! USART_GetFlagStatus(USART2, USART_FLAG_TXE ) );
-  USART_SendData(USART2, s);
+  while (counter != 5)
+  {
+      USART_SendData(USART1, pucBuffer[counter++]);
+    while( ! USART_GetFlagStatus(USART1, USART_FLAG_TXE )); // Ждем пока не освободится USART
+  }
+}
+*/
+
+void dma_usart_init (void)
+{
+  // Разрешить тактирвоание модуля DMA
+  RCC_AHBPeriphClockCmd (RCC_AHBPeriph_DMA1, ENABLE); 
+  
+  //RCC->APB2ENR |= RCC_APB2ENR_IOPDEN | RCC_APB2ENR_AFIOEN;
+  //AFIO->MAPR |= AFIO_MAPR_USART2_REMAP;
+  
+  DMA_InitTypeDef DMA_InitStructure;
+  DMA_StructInit(&DMA_InitStructure);
+  DMA_InitStructure.DMA_MemoryInc = DMA_MemoryInc_Enable;
+  DMA_InitStructure.DMA_MemoryDataSize = DMA_MemoryDataSize_Byte;
+  DMA_InitStructure.DMA_MemoryBaseAddr = (uint32_t) ADCbuffer;
+  DMA_InitStructure.DMA_PeripheralInc = DMA_PeripheralInc_Disable;
+  DMA_InitStructure.DMA_PeripheralDataSize = DMA_PeripheralDataSize_Byte;
+  DMA_InitStructure.DMA_PeripheralBaseAddr = (uint32_t) &(USART1->DR);
+  DMA_InitStructure.DMA_DIR = DMA_DIR_PeripheralDST;
+  DMA_InitStructure.DMA_BufferSize = sizeof (ADCbuffer);
+  DMA_InitStructure.DMA_Mode = DMA_Mode_Normal;
+  DMA_Init(DMA1_Channel4, &DMA_InitStructure);	//4 канал - Tx USART1
+  
+  // Активируем передачу в последовательный порт по запросу DMA 
+  DMA_Cmd(DMA1_Channel4, ENABLE); //Включаем прямой доступ к памяти
+  USART_DMACmd(USART1, USART_DMAReq_Tx, ENABLE); 
+  
+ /* Установка прерываний от DMA по окончании передачи */
+ DMA_ITConfig(DMA1_Channel4, DMA_IT_TC, ENABLE);
+ NVIC_EnableIRQ(DMA1_Channel4_IRQn);  
+ 
+
+}
+
+void DMA1_Channel4_IRQHandler(void)
+{
+  /*
+	if (DMA_GetITStatus(DMA1_IT_TC4) == SET)
+  {
+    DMA_ClearITPendingBit(DMA1_IT_TC4);
+  }
+  */
+  DMA_ClearITPendingBit(DMA1_IT_TC4);
+	DMA_Cmd(DMA1_Channel4, DISABLE);
   
 }
-
-volatile uint16_t ADCbuffer[100] = {1, 2, 3, 4, 5}; //Создание массива (буфера) значений, считывающихся с резисторов
-
-
-
 
 int main(void)
 {
-    const unsigned char mytext[] = " Hello World!\r\n";
- 
-    //USART
-    usart_init();
-    
   
-    while (1)
-    {
-       USART_Send(mytext);
-    }
-    
+  const unsigned char mytext[] = " Hello World\n!";
+ // __enable_irq();
+  //USART
+  usart_init();
+  dma_usart_init();
+
+  while (1)
+  {
+  //  USART_Send(ADCbuffer);
+  //  __NOP();
+  }
+  
 }
 
 // классический ассерт для STM32
