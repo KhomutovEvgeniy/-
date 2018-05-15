@@ -16,17 +16,17 @@
 #define RES_4_PIN GPIO_Pin_1
 #define RES_5_PIN GPIO_Pin_0
 
-// Массив (буфер) показаний резисторов, считывающихся с ADC
-static volatile uint8_t USART_buffer[] = {0, 0, 0, 0, 0};
 // Преобразованный массив показаний для отправки по USART1
-static volatile uint16_t ADC_buffer[] = {0, 0, 0, 0, 0};
+static volatile uint8_t USART_buffer[] = {0, 0, 0};
+// Массив (буфер) показаний резисторов, считывающихся с ADC
+static volatile uint16_t ADC_buffer[] = {0, 0, 0};
 static volatile uint32_t timeStampMs = 0;
 
 // Local functions prototype
 void usart_init (void);
 void dma_usart_init (void);
 void adc_init (void);
-void dma_adc_init ();
+void dma_adc_init (void);
 void array_for_usart(uint16_t *buffer, uint16_t bits);
 void DelayMs(uint32_t delay);
 
@@ -117,23 +117,24 @@ void dma_usart_init (void)
 void adc_init (void)
 {
   // Разрешение тактирования портов А и С (К ним подключены резисторы)
-  RCC_APB2PeriphClockCmd(RCC_APB2Periph_GPIOA | RCC_APB2Periph_GPIOC, ENABLE); 
-  
+  RCC_APB2PeriphClockCmd(RCC_APB2Periph_GPIOA , ENABLE); 
+  // RCC_APB2PeriphClockCmd(RCC_APB2Periph_GPIOC , ENABLE); Отключен т.к. у имеющегося манипулятора только 3 степени подвижности
   // Разрешение тактирования модуля АЦП1
   RCC_APB2PeriphClockCmd (RCC_APB2Periph_ADC1, ENABLE);
-  
+  // Предделитель АЦП
+  RCC_ADCCLKConfig(RCC_PCLK2_Div2);
   // Настройка АЦП (первые три степени свободы)
   GPIO_InitTypeDef GPIO_InitStructure1;
   GPIO_InitStructure1.GPIO_Pin = RES_1_PIN | RES_2_PIN | RES_3_PIN;
   GPIO_InitStructure1.GPIO_Mode = GPIO_Mode_AIN;
   GPIO_Init (Resistor_PORT1, &GPIO_InitStructure1);
-
+/*
   // Настройка АЦП (крайние две степени свободы)
   GPIO_InitTypeDef GPIO_InitStructure2;
   GPIO_InitStructure2.GPIO_Pin = RES_4_PIN || RES_5_PIN;
   GPIO_InitStructure2.GPIO_Mode = GPIO_Mode_AIN;
   GPIO_Init (Resistor_PORT2, &GPIO_InitStructure2);
-  
+*/
   // Настройка АЦП
   ADC_InitTypeDef ADC_InitStructure;
   ADC_InitStructure.ADC_Mode = ADC_Mode_Independent; // Независимый режим (т.к. используем 1 АЦП)
@@ -141,14 +142,14 @@ void adc_init (void)
   ADC_InitStructure.ADC_ContinuousConvMode = ENABLE; // Циклическое сканирование
   ADC_InitStructure.ADC_ExternalTrigConv = ADC_ExternalTrigConv_None; // Источник запуска АЦП - нет  
   ADC_InitStructure.ADC_DataAlign = ADC_DataAlign_Right; // Выравнимание битов по правому краю
-  ADC_InitStructure.ADC_NbrOfChannel = 5; // Количество каналов сканирования
+  ADC_InitStructure.ADC_NbrOfChannel = 3; // Количество каналов сканирования
   
   // Определение регулярной группы сканирования АЦП  
   ADC_RegularChannelConfig(ADC1, ADC_Channel_0, 1, ADC_SampleTime_239Cycles5); // Время выборки для канала - 239.5 циклов
   ADC_RegularChannelConfig(ADC1, ADC_Channel_1, 2, ADC_SampleTime_239Cycles5);
   ADC_RegularChannelConfig(ADC1, ADC_Channel_4, 3, ADC_SampleTime_239Cycles5);
-  ADC_RegularChannelConfig(ADC1, ADC_Channel_11, 4, ADC_SampleTime_239Cycles5);
-  ADC_RegularChannelConfig(ADC1, ADC_Channel_10, 5, ADC_SampleTime_239Cycles5);
+//  ADC_RegularChannelConfig(ADC1, ADC_Channel_11, 4, ADC_SampleTime_239Cycles5);
+//  ADC_RegularChannelConfig(ADC1, ADC_Channel_10, 5, ADC_SampleTime_239Cycles5);
   ADC_Init (ADC1, &ADC_InitStructure);
   
   // Запуск АЦП
@@ -192,7 +193,7 @@ void dma_adc_init ()
 // в этом случае на выходе не потребуется из байтиков лепить большие оригинальные значения
 void array_for_usart(uint16_t *buffer, uint16_t bits)
 {
-  for (int i = 0; i < 5; i++)
+  for (int i = 0; i < 3; i++)
   USART_buffer[i] = (buffer[i] >> bits);
 }
 
@@ -234,7 +235,8 @@ int main(void)
     array_for_usart(ADC_buffer, 4);
     usart_init();
     dma_usart_init();
-    DelayMs(100);
+    for (int i = 0; i < 1000000; i++);
+    // DelayMs(50);
   }
 }
 
