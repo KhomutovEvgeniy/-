@@ -17,9 +17,9 @@
 #define RES_5_PIN GPIO_Pin_0
 
 // Массив (буфер) показаний резисторов, считывающихся с ADC
-static volatile uint8_t USART_buffer[] = {0, 0, 0, 0, 0};
-// Преобразованный массив показаний для отправки по USART1
 static volatile uint16_t ADC_buffer[] = {0, 0, 0, 0, 0};
+// Преобразованный массив показаний для отправки по USART1
+static volatile uint8_t USART_buffer[] = {0, 0, 0, 0, 0};
 static volatile uint32_t timeStampMs = 0;
 
 // Local functions prototype
@@ -105,8 +105,8 @@ void dma_usart_init (void)
   DMA_InitStructure.DMA_Mode = DMA_Mode_Normal;
   DMA_Init(DMA1_Channel4, &DMA_InitStructure);	//4 канал - Tx USART1
   
-  // Активируем передачу в последовательный порт по запросу DMA 
   DMA_Cmd(DMA1_Channel4, ENABLE); //Включаем прямой доступ к памяти
+  // Активируем передачу в последовательный порт по запросу DMA 
   USART_DMACmd(USART1, USART_DMAReq_Tx, ENABLE); 
   
   // Установка прерываний от DMA по окончании передачи 
