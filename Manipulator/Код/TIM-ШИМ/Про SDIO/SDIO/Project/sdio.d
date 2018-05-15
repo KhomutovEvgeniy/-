@@ -1,0 +1,11 @@
+sdio.o: ..\Source\sdio.c
+sdio.o: ..\CMSIS\stm32f10x.h
+sdio.o: ..\CMSIS\core_cm3.h
+sdio.o: C:\Keil\ARM\ARMCC\bin\..\include\stdint.h
+sdio.o: ..\CMSIS\system_stm32f10x.h
+sdio.o: ..\CMSIS\stm32f10x_conf.h
+sdio.o: ..\SPL\stm32f10x_fsmc.h
+sdio.o: ..\CMSIS\stm32f10x.h
+sdio.o: ..\SPL\stm32f10x_gpio.h
+sdio.o: ..\SPL\stm32f10x_rcc.h
+sdio.o: ..\SD\sdcard.h

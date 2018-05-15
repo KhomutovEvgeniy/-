@@ -1,0 +1,5 @@
+-c --cpu Cortex-M3 -D__EVAL -g -O0 --apcs=interwork -I.\src\CMSIS -I.\src\SPL\inc -I.\src --c99 
+-I C:\Keil\ARM\RV31\INC 
+-I C:\Keil\ARM\CMSIS\Include 
+-I C:\Keil\ARM\Inc\ST\STM32F10x 
+-DUSE_FULL_ASSERT -DUSE_STDPERIPH_DRIVER -o ".\obj\stm32f10x_adc.o" --omf_browse ".\obj\stm32f10x_adc.crf" --depend ".\obj\stm32f10x_adc.d" "src\SPL\src\stm32f10x_adc.c"
