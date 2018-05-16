@@ -1,0 +1,30 @@
+<html>
+<body>
+<pre>
+<h1>µVision Build Log</h1>
+<h2>Project:</h2>
+G:\9\ÿ»Ã2_DYN2\SPL_Example_sources_only\dummy.uvproj
+Project File Date:  04/25/2016
+
+<h2>Output:</h2>
+Build target 'Target 1'
+compiling main.c...
+src\App\main.c(112): warning:  #111-D: statement is unreachable
+src\App\main.c(114): warning:  #1-D: last line of file ends without a newline
+linking...
+Program Size: Code=24508 RO-data=556 RW-data=40 ZI-data=3152  
+".\obj\dummy.axf" - 0 Errors, 2 Warning(s).
+Build target 'Target 1'
+compiling main.c...
+src\App\main.c(112): warning:  #111-D: statement is unreachable
+src\App\main.c(114): warning:  #1-D: last line of file ends without a newline
+linking...
+Program Size: Code=24508 RO-data=556 RW-data=40 ZI-data=3152  
+".\obj\dummy.axf" - 0 Errors, 2 Warning(s).
+Build target 'Target 1'
+compiling main.c...
+src\App\main.c(112): warning:  #111-D: statement is unreachable
+src\App\main.c(114): warning:  #1-D: last line of file ends without a newline
+linking...
+Program Size: Code=24500 RO-data=556 RW-data=40 ZI-data=1704  
+".\obj\dummy.axf" - 0 Errors, 2 Warning(s).

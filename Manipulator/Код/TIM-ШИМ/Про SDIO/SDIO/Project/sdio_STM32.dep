@@ -1,0 +1,92 @@
+Dependencies for Project 'sdio', Target 'STM32': (DO NOT MODIFY !)
+F (.\startup_stm32f10x_hd.s)(0x50879FFC)(--cpu Cortex-M3 -g --apcs=interwork -I C:\Keil\ARM\RV31\INC -I C:\Keil\ARM\CMSIS\Include -I C:\Keil\ARM\Inc\ST\STM32F10x --list "startup_stm32f10x_hd.lst" --xref -o "startup_stm32f10x_hd.o" --depend "startup_stm32f10x_hd.d")
+F (..\SPL\stm32f10x_fsmc.c)(0x49D9AF9A)(-c --cpu Cortex-M3 -g -O0 --apcs=interwork -I..\CMSIS -I..\SPL -I..\Source -I..\SD -I C:\Keil\ARM\RV31\INC -I C:\Keil\ARM\CMSIS\Include -I C:\Keil\ARM\Inc\ST\STM32F10x -DUSE_STDPERIPH_DRIVER -o "stm32f10x_fsmc.o" --omf_browse "stm32f10x_fsmc.crf" --depend "stm32f10x_fsmc.d")
+I (..\SPL\stm32f10x_fsmc.h)(0x4D1E397A)
+I (..\CMSIS\stm32f10x.h)(0x4B00FE60)
+I (..\CMSIS\core_cm3.h)(0x4DFC7BEA)
+I (C:\Keil\ARM\ARMCC\bin\..\include\stdint.h)(0x50F99990)
+I (..\CMSIS\system_stm32f10x.h)(0x49D9A188)
+I (..\CMSIS\stm32f10x_conf.h)(0x49D9A192)
+I (..\SPL\stm32f10x_gpio.h)(0x4AA0FDAC)
+I (..\SPL\stm32f10x_rcc.h)(0x49D9A18A)
+F (..\SPL\stm32f10x_gpio.c)(0x4AA10E1A)(-c --cpu Cortex-M3 -g -O0 --apcs=interwork -I..\CMSIS -I..\SPL -I..\Source -I..\SD -I C:\Keil\ARM\RV31\INC -I C:\Keil\ARM\CMSIS\Include -I C:\Keil\ARM\Inc\ST\STM32F10x -DUSE_STDPERIPH_DRIVER -o "stm32f10x_gpio.o" --omf_browse "stm32f10x_gpio.crf" --depend "stm32f10x_gpio.d")
+I (..\SPL\stm32f10x_gpio.h)(0x4AA0FDAC)
+I (..\CMSIS\stm32f10x.h)(0x4B00FE60)
+I (..\CMSIS\core_cm3.h)(0x4DFC7BEA)
+I (C:\Keil\ARM\ARMCC\bin\..\include\stdint.h)(0x50F99990)
+I (..\CMSIS\system_stm32f10x.h)(0x49D9A188)
+I (..\CMSIS\stm32f10x_conf.h)(0x49D9A192)
+I (..\SPL\stm32f10x_fsmc.h)(0x4D1E397A)
+I (..\SPL\stm32f10x_rcc.h)(0x49D9A18A)
+F (..\SPL\stm32f10x_rcc.c)(0x49D9AF9A)(-c --cpu Cortex-M3 -g -O0 --apcs=interwork -I..\CMSIS -I..\SPL -I..\Source -I..\SD -I C:\Keil\ARM\RV31\INC -I C:\Keil\ARM\CMSIS\Include -I C:\Keil\ARM\Inc\ST\STM32F10x -DUSE_STDPERIPH_DRIVER -o "stm32f10x_rcc.o" --omf_browse "stm32f10x_rcc.crf" --depend "stm32f10x_rcc.d")
+I (..\SPL\stm32f10x_rcc.h)(0x49D9A18A)
+I (..\CMSIS\stm32f10x.h)(0x4B00FE60)
+I (..\CMSIS\core_cm3.h)(0x4DFC7BEA)
+I (C:\Keil\ARM\ARMCC\bin\..\include\stdint.h)(0x50F99990)
+I (..\CMSIS\system_stm32f10x.h)(0x49D9A188)
+I (..\CMSIS\stm32f10x_conf.h)(0x49D9A192)
+I (..\SPL\stm32f10x_fsmc.h)(0x4D1E397A)
+I (..\SPL\stm32f10x_gpio.h)(0x4AA0FDAC)
+F (..\SPL\stm32f10x_sdio.c)(0x4D788204)(-c --cpu Cortex-M3 -g -O0 --apcs=interwork -I..\CMSIS -I..\SPL -I..\Source -I..\SD -I C:\Keil\ARM\RV31\INC -I C:\Keil\ARM\CMSIS\Include -I C:\Keil\ARM\Inc\ST\STM32F10x -DUSE_STDPERIPH_DRIVER -o "stm32f10x_sdio.o" --omf_browse "stm32f10x_sdio.crf" --depend "stm32f10x_sdio.d")
+I (..\SPL\stm32f10x_sdio.h)(0x4D7873F4)
+I (..\CMSIS\stm32f10x.h)(0x4B00FE60)
+I (..\CMSIS\core_cm3.h)(0x4DFC7BEA)
+I (C:\Keil\ARM\ARMCC\bin\..\include\stdint.h)(0x50F99990)
+I (..\CMSIS\system_stm32f10x.h)(0x49D9A188)
+I (..\CMSIS\stm32f10x_conf.h)(0x49D9A192)
+I (..\SPL\stm32f10x_fsmc.h)(0x4D1E397A)
+I (..\SPL\stm32f10x_gpio.h)(0x4AA0FDAC)
+I (..\SPL\stm32f10x_rcc.h)(0x49D9A18A)
+F (..\SPL\stm32f10x_fsmc.h)(0x4D1E478A)()
+F (..\SPL\stm32f10x_gpio.h)(0x4AA10BBC)()
+F (..\SPL\stm32f10x_rcc.h)(0x49D9AF9A)()
+F (..\SPL\stm32f10x_sdio.h)(0x4D788204)()
+F (..\SPL\stm32f10x_dma.c)(0x4D788204)(-c --cpu Cortex-M3 -g -O0 --apcs=interwork -I..\CMSIS -I..\SPL -I..\Source -I..\SD -I C:\Keil\ARM\RV31\INC -I C:\Keil\ARM\CMSIS\Include -I C:\Keil\ARM\Inc\ST\STM32F10x -DUSE_STDPERIPH_DRIVER -o "stm32f10x_dma.o" --omf_browse "stm32f10x_dma.crf" --depend "stm32f10x_dma.d")
+I (..\SPL\stm32f10x_dma.h)(0x4D7873F4)
+I (..\CMSIS\stm32f10x.h)(0x4B00FE60)
+I (..\CMSIS\core_cm3.h)(0x4DFC7BEA)
+I (C:\Keil\ARM\ARMCC\bin\..\include\stdint.h)(0x50F99990)
+I (..\CMSIS\system_stm32f10x.h)(0x49D9A188)
+I (..\CMSIS\stm32f10x_conf.h)(0x49D9A192)
+I (..\SPL\stm32f10x_fsmc.h)(0x4D1E397A)
+I (..\SPL\stm32f10x_gpio.h)(0x4AA0FDAC)
+I (..\SPL\stm32f10x_rcc.h)(0x49D9A18A)
+F (..\SPL\stm32f10x_dma.h)(0x4D788204)()
+F (..\CMSIS\core_cm3.c)(0x4DFC8A06)(-c --cpu Cortex-M3 -g -O0 --apcs=interwork -I..\CMSIS -I..\SPL -I..\Source -I..\SD -I C:\Keil\ARM\RV31\INC -I C:\Keil\ARM\CMSIS\Include -I C:\Keil\ARM\Inc\ST\STM32F10x -DUSE_STDPERIPH_DRIVER -o "core_cm3.o" --omf_browse "core_cm3.crf" --depend "core_cm3.d")
+I (C:\Keil\ARM\ARMCC\bin\..\include\stdint.h)(0x50F99990)
+F (..\CMSIS\core_cm3.h)(0x4DFC89FA)()
+F (..\CMSIS\stm32f10x.h)(0x4B010C70)()
+F (..\CMSIS\stm32f10x_conf.h)(0x49D9AFA2)()
+F (..\CMSIS\system_stm32f10x.c)(0x4AA114F2)(-c --cpu Cortex-M3 -g -O0 --apcs=interwork -I..\CMSIS -I..\SPL -I..\Source -I..\SD -I C:\Keil\ARM\RV31\INC -I C:\Keil\ARM\CMSIS\Include -I C:\Keil\ARM\Inc\ST\STM32F10x -DUSE_STDPERIPH_DRIVER -o "system_stm32f10x.o" --omf_browse "system_stm32f10x.crf" --depend "system_stm32f10x.d")
+I (..\CMSIS\stm32f10x.h)(0x4B00FE60)
+I (..\CMSIS\core_cm3.h)(0x4DFC7BEA)
+I (C:\Keil\ARM\ARMCC\bin\..\include\stdint.h)(0x50F99990)
+I (..\CMSIS\system_stm32f10x.h)(0x49D9A188)
+I (..\CMSIS\stm32f10x_conf.h)(0x49D9A192)
+I (..\SPL\stm32f10x_fsmc.h)(0x4D1E397A)
+I (..\SPL\stm32f10x_gpio.h)(0x4AA0FDAC)
+I (..\SPL\stm32f10x_rcc.h)(0x49D9A18A)
+F (..\CMSIS\system_stm32f10x.h)(0x49D9AF98)()
+F (..\Source\sdio.c)(0x51866CED)(-c --cpu Cortex-M3 -g -O0 --apcs=interwork -I..\CMSIS -I..\SPL -I..\Source -I..\SD -I C:\Keil\ARM\RV31\INC -I C:\Keil\ARM\CMSIS\Include -I C:\Keil\ARM\Inc\ST\STM32F10x -DUSE_STDPERIPH_DRIVER -o "sdio.o" --omf_browse "sdio.crf" --depend "sdio.d")
+I (..\CMSIS\stm32f10x.h)(0x4B00FE60)
+I (..\CMSIS\core_cm3.h)(0x4DFC7BEA)
+I (C:\Keil\ARM\ARMCC\bin\..\include\stdint.h)(0x50F99990)
+I (..\CMSIS\system_stm32f10x.h)(0x49D9A188)
+I (..\CMSIS\stm32f10x_conf.h)(0x49D9A192)
+I (..\SPL\stm32f10x_fsmc.h)(0x4D1E397A)
+I (..\SPL\stm32f10x_gpio.h)(0x4AA0FDAC)
+I (..\SPL\stm32f10x_rcc.h)(0x49D9A18A)
+I (..\SD\sdcard.h)(0x4AC0DB98)
+F (..\SD\sdcard.c)(0x51854333)(-c --cpu Cortex-M3 -g -O0 --apcs=interwork -I..\CMSIS -I..\SPL -I..\Source -I..\SD -I C:\Keil\ARM\RV31\INC -I C:\Keil\ARM\CMSIS\Include -I C:\Keil\ARM\Inc\ST\STM32F10x -DUSE_STDPERIPH_DRIVER -o "sdcard.o" --omf_browse "sdcard.crf" --depend "sdcard.d")
+I (..\SD\sdcard.h)(0x4AC0DB98)
+I (..\CMSIS\stm32f10x.h)(0x4B00FE60)
+I (..\CMSIS\core_cm3.h)(0x4DFC7BEA)
+I (C:\Keil\ARM\ARMCC\bin\..\include\stdint.h)(0x50F99990)
+I (..\CMSIS\system_stm32f10x.h)(0x49D9A188)
+I (..\CMSIS\stm32f10x_conf.h)(0x49D9A192)
+I (..\SPL\stm32f10x_fsmc.h)(0x4D1E397A)
+I (..\SPL\stm32f10x_gpio.h)(0x4AA0FDAC)
+I (..\SPL\stm32f10x_rcc.h)(0x49D9A18A)
+I (..\SPL\stm32f10x_sdio.h)(0x4D7873F4)
+I (..\SPL\stm32f10x_dma.h)(0x4D7873F4)
+F (..\SD\sdcard.h)(0x4AC0E9A8)()
