@@ -16,17 +16,10 @@
 #define RES_4_PIN GPIO_Pin_1
 #define RES_5_PIN GPIO_Pin_0
 
-<<<<<<< HEAD
-// Массив (буфер) показаний резисторов, считывающихся с ADC
-static volatile uint16_t ADC_buffer[] = {0, 0, 0, 0, 0};
-// Преобразованный массив показаний для отправки по USART1
-static volatile uint8_t USART_buffer[] = {0, 0, 0, 0, 0};
-=======
 // Преобразованный массив показаний для отправки по USART1
 static volatile uint8_t USART_buffer[] = {0, 0, 0};
 // Массив (буфер) показаний резисторов, считывающихся с ADC
 static volatile uint16_t ADC_buffer[] = {0, 0, 0};
->>>>>>> c2cc8e11be8aef6dca56af05c5e0db7b5ce845c2
 static volatile uint32_t timeStampMs = 0;
 
 // Local functions prototype
@@ -243,7 +236,8 @@ int main(void)
     usart_init();
     dma_usart_init();
     for (int i = 0; i < 1000000; i++);
-    // DelayMs(50);
+    // DelayMs(50); // при 3-х каналах сканирования, программа встает на Delay,
+    //                 но при 5-ти такого не происходит
   }
 }
 
