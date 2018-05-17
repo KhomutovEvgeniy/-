@@ -110,8 +110,8 @@ void dma_usart_init (void)
   USART_DMACmd(USART1, USART_DMAReq_Tx, ENABLE); 
   
   // Установка прерываний от DMA по окончании передачи 
-  DMA_ITConfig(DMA1_Channel4, DMA_IT_TC, ENABLE);
-  NVIC_EnableIRQ(DMA1_Channel4_IRQn);  
+//  DMA_ITConfig(DMA1_Channel4, DMA_IT_TC, ENABLE);
+//  NVIC_EnableIRQ(DMA1_Channel4_IRQn);  
 }
 
 void adc_init (void)
@@ -162,10 +162,10 @@ void adc_init (void)
   while (ADC_GetResetCalibrationStatus(ADC1));
   ADC_StartCalibration (ADC1);
   while (ADC_GetCalibrationStatus(ADC1));
-  
   // Запуск преобразований ADC
   ADC_SoftwareStartConvCmd (ADC1, ENABLE); 
 }
+
 void dma_adc_init ()
 {
   // Разрешение тактирвоания модуля DMA
@@ -186,8 +186,8 @@ void dma_adc_init ()
   // Активация передачи в последовательный порт по запросу DMA 
   DMA_Cmd(DMA1_Channel1, ENABLE); //Включаем прямой доступ к памяти
   // Включение прерывания DMA по завершении цикла обработки
-  DMA_ITConfig(DMA1_Channel1, DMA_IT_TC, ENABLE);
-  NVIC_EnableIRQ(DMA1_Channel1_IRQn);  
+//  DMA_ITConfig(DMA1_Channel1, DMA_IT_TC, ENABLE);
+//  NVIC_EnableIRQ(DMA1_Channel1_IRQn);  
 }
 // Преобразование показаний, полученных с АЦП, для отправки по USART 
 // в этом случае на выходе не потребуется из байтиков лепить большие оригинальные значения
@@ -201,9 +201,9 @@ void array_for_usart(uint16_t *buffer, uint16_t bits)
 void DelayMs(uint32_t delay)
 {
 	uint32_t currentTimeMs = timeStampMs;
-	while( timeStampMs < currentTimeMs + delay );
+	while( timeStampMs - currentTimeMs > delay );
 }
-
+/*
 // Обработчик прерывания по событию - DMA1 записал показания всех 5-ти резисторов в буфер
 void DMA1_Channel1_IRQHandler(void)
 {
@@ -219,7 +219,7 @@ void DMA1_Channel4_IRQHandler(void)
   DMA_ClearITPendingBit(DMA1_IT_TC4);
 	DMA_Cmd(DMA1_Channel4, DISABLE);
 }
-
+*/
 void SysTick_Handler()
 {
 	timeStampMs++;
@@ -228,16 +228,14 @@ void SysTick_Handler()
 int main(void)
 {
   SysTick_Config(SystemCoreClock / 1000);
+  
+  adc_init();
+  dma_adc_init();
+  usart_init();
+  dma_usart_init();  
   while (1)
   {
-    adc_init();
-    dma_adc_init();
     array_for_usart(ADC_buffer, 4);
-    usart_init();
-    dma_usart_init();
-    for (int i = 0; i < 1000000; i++);
-    // DelayMs(50); // при 3-х каналах сканирования, программа встает на Delay,
-    //                 но при 5-ти такого не происходит
   }
 }
 
