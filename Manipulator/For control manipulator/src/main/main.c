@@ -20,20 +20,21 @@
 static volatile uint8_t USART_buffer[] = {0, 0, 0};
 // Массив (буфер) показаний резисторов, считывающихся с ADC
 static volatile uint16_t ADC_buffer[] = {0, 0, 0};
-static volatile uint32_t timeStampMs = 0;
+// static volatile uint32_t timeStampMs = 0; Необ для задержки
 
 // Local functions prototype
 void usart_init (void);
 void dma_usart_init (void);
 void adc_init (void);
 void dma_adc_init (void);
-void array_for_usart(uint16_t *buffer, uint16_t bits);
-void DelayMs(uint32_t delay);
+void array_for_usart(void);
+void DMA1_Channel1_IRQHandler(void);
+//void DelayMs(uint32_t delay);
 
 void usart_init (void)
 {
   /* Enable USART1 and GPIOA PORT */
-  RCC_APB2PeriphClockCmd (RCC_APB2Periph_GPIOA, ENABLE); //Разрешить тактирование ножек Rx и Tx
+  RCC_APB2PeriphClockCmd (RCC_APB2Periph_GPIOA, ENABLE); //Разрешить тактирование ножки Tx
   RCC_APB2PeriphClockCmd (RCC_APB2Periph_USART1, ENABLE); //Разрешить тактирование USART1
   /* Configure the GPIOs */
   GPIO_InitTypeDef GPIO_InitStructure;
@@ -43,11 +44,6 @@ void usart_init (void)
   GPIO_InitStructure.GPIO_Mode = GPIO_Mode_AF_PP;
   GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;
   GPIO_Init(USART1_PORT_Tx, &GPIO_InitStructure);
-
-  /* Configure USART1 Rx (PA.10) as input floating */
-  GPIO_InitStructure.GPIO_Pin = GPIO_Pin_10;
-  GPIO_InitStructure.GPIO_Mode = GPIO_Mode_IN_FLOATING;
-  GPIO_Init(USART1_PORT_Rx, &GPIO_InitStructure);
 
   /* Configure the USART1 */
   USART_InitTypeDef USART_InitStructure;
@@ -71,20 +67,10 @@ void usart_init (void)
   USART_InitStructure.USART_StopBits = USART_StopBits_1;
   USART_InitStructure.USART_Parity = USART_Parity_No;
   USART_InitStructure.USART_HardwareFlowControl = USART_HardwareFlowControl_None;
-  USART_InitStructure.USART_Mode = USART_Mode_Rx | USART_Mode_Tx;
+  USART_InitStructure.USART_Mode = USART_Mode_Tx;
   USART_Init(USART1, &USART_InitStructure);
   USART_Cmd(USART1, ENABLE); //Enable USART1
 }
-/*
-void USART_Send(uint16_t * pucBuffer)
-{
-  while (counter != 5)
-  {
-    USART_SendData(USART1, pucBuffer[counter++]);
-    while( ! USART_GetFlagStatus(USART1, USART_FLAG_TXE )); // Ждем пока не освободится USART
-  }
-}
-*/
 
 void dma_usart_init (void)
 {
@@ -102,13 +88,12 @@ void dma_usart_init (void)
   DMA_InitStructure.DMA_PeripheralBaseAddr = (uint32_t) &(USART1->DR);
   DMA_InitStructure.DMA_DIR = DMA_DIR_PeripheralDST;
   DMA_InitStructure.DMA_BufferSize = sizeof(USART_buffer);
-  DMA_InitStructure.DMA_Mode = DMA_Mode_Normal;
+  DMA_InitStructure.DMA_Mode = DMA_Mode_Circular;
   DMA_Init(DMA1_Channel4, &DMA_InitStructure);	//4 канал - Tx USART1
   
   DMA_Cmd(DMA1_Channel4, ENABLE); //Включаем прямой доступ к памяти
   // Активируем передачу в последовательный порт по запросу DMA 
-  USART_DMACmd(USART1, USART_DMAReq_Tx, ENABLE); 
-  
+  USART_DMACmd(USART1, USART_DMAReq_Tx, ENABLE);   
   // Установка прерываний от DMA по окончании передачи 
 //  DMA_ITConfig(DMA1_Channel4, DMA_IT_TC, ENABLE);
 //  NVIC_EnableIRQ(DMA1_Channel4_IRQn);  
@@ -121,7 +106,7 @@ void adc_init (void)
   // RCC_APB2PeriphClockCmd(RCC_APB2Periph_GPIOC , ENABLE); Отключен т.к. у имеющегося манипулятора только 3 степени подвижности
   // Разрешение тактирования модуля АЦП1
   RCC_APB2PeriphClockCmd (RCC_APB2Periph_ADC1, ENABLE);
-  // Предделитель АЦП
+  // Предделитель АЦП (default)
   RCC_ADCCLKConfig(RCC_PCLK2_Div2);
   // Настройка АЦП (первые три степени свободы)
   GPIO_InitTypeDef GPIO_InitStructure1;
@@ -139,7 +124,7 @@ void adc_init (void)
   ADC_InitTypeDef ADC_InitStructure;
   ADC_InitStructure.ADC_Mode = ADC_Mode_Independent; // Независимый режим (т.к. используем 1 АЦП)
   ADC_InitStructure.ADC_ScanConvMode = ENABLE; // Сканирующий режим (т.к. сигнал будем снимать не с одной ножки)
-  ADC_InitStructure.ADC_ContinuousConvMode = ENABLE; // Циклическое сканирование
+  ADC_InitStructure.ADC_ContinuousConvMode = DISABLE; // Циклическое сканирование
   ADC_InitStructure.ADC_ExternalTrigConv = ADC_ExternalTrigConv_None; // Источник запуска АЦП - нет  
   ADC_InitStructure.ADC_DataAlign = ADC_DataAlign_Right; // Выравнимание битов по правому краю
   ADC_InitStructure.ADC_NbrOfChannel = 3; // Количество каналов сканирования
@@ -181,63 +166,71 @@ void dma_adc_init ()
   DMA_InitStructure.DMA_PeripheralBaseAddr = (uint32_t) &(ADC1->DR);
   DMA_InitStructure.DMA_DIR = DMA_DIR_PeripheralSRC;
   DMA_InitStructure.DMA_BufferSize = sizeof(ADC_buffer);
-  DMA_InitStructure.DMA_Mode = DMA_Mode_Circular;
+  DMA_InitStructure.DMA_Mode = DMA_Mode_Normal;
   DMA_Init(DMA1_Channel1, &DMA_InitStructure);	//1 канал - ADC1
   // Активация передачи в последовательный порт по запросу DMA 
   DMA_Cmd(DMA1_Channel1, ENABLE); //Включаем прямой доступ к памяти
   // Включение прерывания DMA по завершении цикла обработки
-//  DMA_ITConfig(DMA1_Channel1, DMA_IT_TC, ENABLE);
-//  NVIC_EnableIRQ(DMA1_Channel1_IRQn);  
+  DMA_ITConfig(DMA1_Channel1, DMA_IT_TC, ENABLE);
+  NVIC_EnableIRQ(DMA1_Channel1_IRQn);  
 }
 // Преобразование показаний, полученных с АЦП, для отправки по USART 
 // в этом случае на выходе не потребуется из байтиков лепить большие оригинальные значения
-void array_for_usart(uint16_t *buffer, uint16_t bits)
+void array_for_usart(void)
 {
+  static float alfa = 0.3;
   for (int i = 0; i < 3; i++)
-  USART_buffer[i] = (buffer[i] >> bits);
+  USART_buffer[i] = USART_buffer[i] * (1 - alfa) + alfa * (ADC_buffer[i] >> 4);
 }
 
+// Обработчик прерывания по событию - DMA1 записал показания всех 3-x резисторов в буфер
+void DMA1_Channel1_IRQHandler(void)
+{   
+  ADC_SoftwareStartConvCmd(ADC1, DISABLE);
+  array_for_usart();
+  // Сбрасывание флага прерывания
+  DMA_ClearITPendingBit(DMA1_IT_TC1);
+  ADC_SoftwareStartConvCmd(ADC1, ENABLE);
+  DMA_Cmd(DMA1_Channel1, ENABLE);
+}
+
+int main(void)
+{
+  // SysTick_Config(SystemCoreClock / 1000);
+  adc_init();
+  dma_adc_init();
+  usart_init();
+  dma_usart_init();  
+  while (1)
+  {   
+  }
+}
+/*
+void SysTick_Handler()
+{
+	timeStampMs++;
+}
 // Временная задержка через SysTick
 void DelayMs(uint32_t delay)
 {
 	uint32_t currentTimeMs = timeStampMs;
 	while( timeStampMs - currentTimeMs > delay );
 }
-/*
-// Обработчик прерывания по событию - DMA1 записал показания всех 5-ти резисторов в буфер
-void DMA1_Channel1_IRQHandler(void)
-{
-  DMA_ClearITPendingBit(DMA1_IT_TC1);
-	DMA_Cmd(DMA1_Channel1, DISABLE);
-  ADC_ClearITPendingBit(ADC1,ADC_IT_EOC);
-  ADC_Cmd(ADC1, DISABLE);
-}
-
-// Обработчик прерывания по событию - DMA1 передал показания всех 5-ти резисторов в регистр USART1
+// Обработчик прерывания по событию - DMA1 передал показания всех 3-x резисторов в регистр USART1
 void DMA1_Channel4_IRQHandler(void)
 {
   DMA_ClearITPendingBit(DMA1_IT_TC4);
 	DMA_Cmd(DMA1_Channel4, DISABLE);
 }
-*/
-void SysTick_Handler()
+void USART_Send(uint16_t * pucBuffer)
 {
-	timeStampMs++;
-}
-
-int main(void)
-{
-  SysTick_Config(SystemCoreClock / 1000);
-  
-  adc_init();
-  dma_adc_init();
-  usart_init();
-  dma_usart_init();  
-  while (1)
+  while (counter != 5)
   {
-    array_for_usart(ADC_buffer, 4);
+    USART_SendData(USART1, pucBuffer[counter++]);
+    while( ! USART_GetFlagStatus(USART1, USART_FLAG_TXE )); // Ждем пока не освободится USART
   }
 }
+*/
 
 // классический ассерт для STM32
 #ifdef USE_FULL_ASSERT
