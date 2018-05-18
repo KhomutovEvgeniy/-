@@ -107,7 +107,7 @@ void adc_init (void)
   // Разрешение тактирования модуля АЦП1
   RCC_APB2PeriphClockCmd (RCC_APB2Periph_ADC1, ENABLE);
   // Предделитель АЦП (default)
-  RCC_ADCCLKConfig(RCC_PCLK2_Div2);
+//  RCC_ADCCLKConfig(RCC_PCLK2_Div2);
   // Настройка АЦП (первые три степени свободы)
   GPIO_InitTypeDef GPIO_InitStructure1;
   GPIO_InitStructure1.GPIO_Pin = RES_1_PIN | RES_2_PIN | RES_3_PIN;
@@ -124,7 +124,7 @@ void adc_init (void)
   ADC_InitTypeDef ADC_InitStructure;
   ADC_InitStructure.ADC_Mode = ADC_Mode_Independent; // Независимый режим (т.к. используем 1 АЦП)
   ADC_InitStructure.ADC_ScanConvMode = ENABLE; // Сканирующий режим (т.к. сигнал будем снимать не с одной ножки)
-  ADC_InitStructure.ADC_ContinuousConvMode = DISABLE; // Циклическое сканирование
+  ADC_InitStructure.ADC_ContinuousConvMode = ENABLE; // Циклическое сканирование
   ADC_InitStructure.ADC_ExternalTrigConv = ADC_ExternalTrigConv_None; // Источник запуска АЦП - нет  
   ADC_InitStructure.ADC_DataAlign = ADC_DataAlign_Right; // Выравнимание битов по правому краю
   ADC_InitStructure.ADC_NbrOfChannel = 3; // Количество каналов сканирования
@@ -166,7 +166,7 @@ void dma_adc_init ()
   DMA_InitStructure.DMA_PeripheralBaseAddr = (uint32_t) &(ADC1->DR);
   DMA_InitStructure.DMA_DIR = DMA_DIR_PeripheralSRC;
   DMA_InitStructure.DMA_BufferSize = sizeof(ADC_buffer);
-  DMA_InitStructure.DMA_Mode = DMA_Mode_Normal;
+  DMA_InitStructure.DMA_Mode = DMA_Mode_Circular;
   DMA_Init(DMA1_Channel1, &DMA_InitStructure);	//1 канал - ADC1
   // Активация передачи в последовательный порт по запросу DMA 
   DMA_Cmd(DMA1_Channel1, ENABLE); //Включаем прямой доступ к памяти
@@ -178,20 +178,24 @@ void dma_adc_init ()
 // в этом случае на выходе не потребуется из байтиков лепить большие оригинальные значения
 void array_for_usart(void)
 {
-  static float alfa = 0.3;
+  float temp = 0;
   for (int i = 0; i < 3; i++)
-  USART_buffer[i] = USART_buffer[i] * (1 - alfa) + alfa * (ADC_buffer[i] >> 4);
+  {
+    // alfa-betta filter (alfa = 0.3)
+    temp = USART_buffer[i] * (1 - 0.3) + 0.3 * (ADC_buffer[i] >> 4);
+    USART_buffer[i] = temp;
+  }
 }
 
 // Обработчик прерывания по событию - DMA1 записал показания всех 3-x резисторов в буфер
 void DMA1_Channel1_IRQHandler(void)
 {   
-  ADC_SoftwareStartConvCmd(ADC1, DISABLE);
+ // ADC_SoftwareStartConvCmd(ADC1, DISABLE);
   array_for_usart();
   // Сбрасывание флага прерывания
-  DMA_ClearITPendingBit(DMA1_IT_TC1);
-  ADC_SoftwareStartConvCmd(ADC1, ENABLE);
-  DMA_Cmd(DMA1_Channel1, ENABLE);
+ // DMA_ClearITPendingBit(DMA1_IT_TC1);
+ // ADC_SoftwareStartConvCmd(ADC1, ENABLE);
+ // DMA_Cmd(DMA1_Channel1, ENABLE);
 }
 
 int main(void)
