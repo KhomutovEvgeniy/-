@@ -473,6 +473,11 @@
               <FileType>1</FileType>
               <FilePath>.\src\spl\src\stm32f10x_usart.c</FilePath>
             </File>
+            <File>
+              <FileName>stm32f10x_tim.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\src\spl\src\stm32f10x_tim.c</FilePath>
+            </File>
           </Files>
         </Group>
       </Groups>
