@@ -29,7 +29,6 @@ void adc_init (void);
 void dma_adc_init (void);
 void array_for_usart(void);
 void DMA1_Channel1_IRQHandler(void);
-//void DelayMs(uint32_t delay);
 
 void usart_init (void)
 {
@@ -94,9 +93,6 @@ void dma_usart_init (void)
   DMA_Cmd(DMA1_Channel4, ENABLE); //Включаем прямой доступ к памяти
   // Активируем передачу в последовательный порт по запросу DMA 
   USART_DMACmd(USART1, USART_DMAReq_Tx, ENABLE);   
-  // Установка прерываний от DMA по окончании передачи 
-//  DMA_ITConfig(DMA1_Channel4, DMA_IT_TC, ENABLE);
-//  NVIC_EnableIRQ(DMA1_Channel4_IRQn);  
 }
 
 void adc_init (void)
@@ -190,17 +186,13 @@ void array_for_usart(void)
 // Обработчик прерывания по событию - DMA1 записал показания всех 3-x резисторов в буфер
 void DMA1_Channel1_IRQHandler(void)
 {   
- // ADC_SoftwareStartConvCmd(ADC1, DISABLE);
   array_for_usart();
   // Сбрасывание флага прерывания
  // DMA_ClearITPendingBit(DMA1_IT_TC1);
- // ADC_SoftwareStartConvCmd(ADC1, ENABLE);
- // DMA_Cmd(DMA1_Channel1, ENABLE);
 }
 
 int main(void)
 {
-  // SysTick_Config(SystemCoreClock / 1000);
   adc_init();
   dma_adc_init();
   usart_init();
@@ -209,32 +201,6 @@ int main(void)
   {   
   }
 }
-/*
-void SysTick_Handler()
-{
-	timeStampMs++;
-}
-// Временная задержка через SysTick
-void DelayMs(uint32_t delay)
-{
-	uint32_t currentTimeMs = timeStampMs;
-	while( timeStampMs - currentTimeMs > delay );
-}
-// Обработчик прерывания по событию - DMA1 передал показания всех 3-x резисторов в регистр USART1
-void DMA1_Channel4_IRQHandler(void)
-{
-  DMA_ClearITPendingBit(DMA1_IT_TC4);
-	DMA_Cmd(DMA1_Channel4, DISABLE);
-}
-void USART_Send(uint16_t * pucBuffer)
-{
-  while (counter != 5)
-  {
-    USART_SendData(USART1, pucBuffer[counter++]);
-    while( ! USART_GetFlagStatus(USART1, USART_FLAG_TXE )); // Ждем пока не освободится USART
-  }
-}
-*/
 
 // классический ассерт для STM32
 #ifdef USE_FULL_ASSERT
