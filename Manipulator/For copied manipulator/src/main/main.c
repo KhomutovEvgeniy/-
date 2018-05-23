@@ -67,7 +67,7 @@ void Motion(uint8_t *angle);
 void Delay(uint32_t Time);
 
 // Массив принятых значений с USART1
-static volatile uint8_t USART_buffer[] = {0, 0, 0};
+static volatile uint8_t USART_buffer[] = {120, 200, 0};
 
 void usart_init (void)
 {
