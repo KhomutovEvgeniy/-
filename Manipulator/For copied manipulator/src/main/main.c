@@ -2,28 +2,30 @@
 #include "stdio.h"
 
 #define USART1_PORT_Rx GPIOA
+#define USART_PIN_Rx GPIO_Pin_10
 #define SERVO_PORT GPIOC
 #define SERVO_1_PIN GPIO_Pin_6
-#define SERVO_2_PIN GPIO_Pin_7
-#define SERVO_3_PIN GPIO_Pin_8
+#define SERVO_2_PIN GPIO_Pin_8
+#define SERVO_3_PIN GPIO_Pin_9
 
 #define SERVO_60 2100
 #define SERVO_0 900
 
 #define SERVO_MAX_ANGLE 60
 #define SERVO_SHORTEST_PULSE 45
+#define MAX_DATA 255
 
 #define TIMER_PRESCALER 72
 #define TIMER_PERIOD 20000
-// Начальные положения сервоприводов
+// Значения ШИМ для начального положения сервоприводов
 #define InitPosition_1 1650
 #define InitPosition_2 1650
 #define InitPosition_3 1650
 
 // Упрощенное обозначение каналов таймера под сервоприводы
 #define SERVO_1 TIM3->CCR1
-#define SERVO_2 TIM3->CCR2
-#define SERVO_3 TIM3->CCR3
+#define SERVO_2 TIM3->CCR3
+#define SERVO_3 TIM3->CCR4
 
 /*
 Задаем частоту работы таймера: 1 МГц, что соответствет периоду в 1 мкс.
@@ -43,32 +45,26 @@
 На один градус поворота 2100-900/60 = 20 мкс
 
 Известно: 
-(в моем случае)
 1650 мкс - 0`
 2200 мкс - 30` по часовой
 800 мкс - 30` против часовой
-
-1500 мкс - 0`
-1950 мкс - 45` по часовой
-1050 мкс - 45` против часовой
 
 Класть в регистр сравнения число, равное 30(800 мкс / 20 мкс) + задаваемый угол.
 
 Регистр сравнения лучше обновлять строго в момент окончания периода во избежание дёргания сервы
 
-Используется TIM2 Channel 3
-Используется TIM3_Channel 1/2/3
+Используется TIM3_Channel(1/3/4)
+Максимальное значение, принятое по USART1 - 255
 */
 
 // Local functions prototype
 void usart_init (void);
 void dma_usart_init (void);
-void Array_Conv (uint8_t *buffer);
 void Initial_Pos(void);
-void Delay(uint32_t Time);
 void Set_Pin(void);
 void Set_Timer(void);
 void Motion(uint8_t *angle);
+void Delay(uint32_t Time);
 
 // Массив принятых значений с USART1
 static volatile uint8_t USART_buffer[] = {0, 0, 0};
@@ -82,7 +78,7 @@ void usart_init (void)
   GPIO_InitTypeDef GPIO_InitStructure;
 
   /* Configure USART1 Rx (PA.10) as input floating */
-  GPIO_InitStructure.GPIO_Pin = GPIO_Pin_10;
+  GPIO_InitStructure.GPIO_Pin = USART_PIN_Rx;
   GPIO_InitStructure.GPIO_Mode = GPIO_Mode_IN_FLOATING;
   GPIO_Init(USART1_PORT_Rx, &GPIO_InitStructure);
 
@@ -112,7 +108,7 @@ void usart_init (void)
   USART_Init(USART1, &USART_InitStructure);
   USART_Cmd(USART1, ENABLE); //Enable USART1
 }
-
+// Настройка модуля ДМА для забора данных, полученных по USART1
 void dma_usart_init (void)
 {
   // Разрешение тактирвоания модуля DMA
@@ -140,11 +136,9 @@ void dma_usart_init (void)
   DMA_ITConfig(DMA1_Channel5, DMA_IT_TC, ENABLE);
   NVIC_EnableIRQ(DMA1_Channel5_IRQn);  
 }
-
 // Обработчик прерывания по событию - DMA1 сохранил показания всех 3-х резисторов, переданных по USART1
 void DMA1_Channel5_IRQHandler(void)
 {
-  Array_Conv(USART_buffer);
   Motion(USART_buffer);
 }
 // функция временной задержки
@@ -154,7 +148,6 @@ void Delay(uint32_t Time)
 	TimingDelay = Time;
 	while(TimingDelay != 0);
 }
-
 
 void TimingDelay_Decrement(void)
 {
@@ -168,29 +161,30 @@ void SysTick_Handler(void)
 {
 	TimingDelay_Decrement();
 }
- // настройка подключения периферии
+ // Настройка подключения периферии
 void Set_Pin()                                          
 {
-	RCC_APB2PeriphClockCmd(RCC_APB2Periph_GPIOC , ENABLE); //Тактируем порт C
-	
-  GPIO_InitTypeDef GPIO_InitStructure;                   // структура сигнальных пинов
+  RCC_APB2PeriphClockCmd(RCC_APB2Periph_GPIOC , ENABLE); // Тактируем порт С, к нему будем подключать сервоприводы
+  // Настроим ножки, к которым подключены сервоприводы в режим Alternate function
+  GPIO_InitTypeDef GPIO_InitStructure;                 
   GPIO_StructInit(&GPIO_InitStructure);
 	GPIO_InitStructure.GPIO_Speed = GPIO_Speed_2MHz;
-	GPIO_InitStructure.GPIO_Mode = GPIO_Mode_AF_PP;                         //Будем использовать альтернативный режим
-	GPIO_InitStructure.GPIO_Pin = SERVO_1_PIN | SERVO_2_PIN | SERVO_3_PIN;  // Настроим ножки, к которой подключены сервоприводы
+	GPIO_InitStructure.GPIO_Mode = GPIO_Mode_AF_PP;                         // Будем использовать альтернативный режим
+	GPIO_InitStructure.GPIO_Pin = SERVO_1_PIN | SERVO_2_PIN | SERVO_3_PIN;  // Настроим ножки, к которым подключены сервоприводы в режим Alternate function
   GPIO_Init(SERVO_PORT, &GPIO_InitStructure);
 }
 
+// Настройка таймера
 void Set_Timer()
 {
+  // Включаем альтернативный режим
   RCC_APB2PeriphClockCmd(RCC_APB2Periph_AFIO, ENABLE);
   GPIO_PinRemapConfig(GPIO_FullRemap_TIM3, ENABLE);
 	// настройка базового таймера
-	RCC_APB1PeriphClockCmd(RCC_APB1Periph_TIM3, ENABLE);       //Тактируем Таймер 3
-                                                             // Частота счёта, отсчет ведется каждые - 1 мкс, период ШИМ - 20 мс(50 Гц)
-	TIM_TimeBaseInitTypeDef TIM;                               // создаем экземпляр структуры, которая задает частоту через предделитель, период и направление счета
+	RCC_APB1PeriphClockCmd(RCC_APB1Periph_TIM3, ENABLE);       //Тактируем Таймер 3                               
+	TIM_TimeBaseInitTypeDef TIM;                               // создаем экземпляр структуры, которая задает частоту через предделитель
   TIM_TimeBaseStructInit(&TIM);                              // заполняем структуру значениями по умолчанию
-	TIM.TIM_Prescaler = TIMER_PRESCALER;                       // предделитель для таймера, значение, досчитав до которго, таймер сгенерирует прерывание. За 10 Кгц один тик
+	TIM.TIM_Prescaler = TIMER_PRESCALER;                       // задаем предделитель таймера
 	TIM.TIM_Period = TIMER_PERIOD;                             // период ШИМ, такой, чтобы частота 50 Гц.
 	TIM_TimeBaseInit(TIM3, &TIM);                              // инициализируем таймер
 	
@@ -201,8 +195,8 @@ void Set_Timer()
 	TIM_PWM.TIM_OutputState = TIM_OutputState_Enable;           // выход включен
 	TIM_PWM.TIM_Pulse = SERVO_SHORTEST_PULSE;                   // чатсота ШИМ, заполнение, скважность.
 	TIM_OC1Init(TIM3, &TIM_PWM);                                // заносим данные в 1-й канал (Поворотная ось основания)
-  TIM_OC2Init(TIM3, &TIM_PWM);                                // заносим данные в 2-й канал (Плечо)
-  TIM_OC3Init(TIM3, &TIM_PWM);                                // заносим данные в 3-й канал (Предплечье)
+  TIM_OC3Init(TIM3, &TIM_PWM);                                // заносим данные в 3-й канал (Плечо)
+  TIM_OC4Init(TIM3, &TIM_PWM);                                // заносим данные в 4-й канал (Предплечье)
   	
 	// разрешение прерываний и работы таймера
 	TIM_ITConfig(TIM3, TIM_IT_Update, ENABLE);                  // режим генерации прерывания по обновлению, переполнению
@@ -213,42 +207,37 @@ void Set_Timer()
 	SysTick_Config(SystemCoreClock / 1000);
 	__enable_irq();
 }
-
+// Функция установки манипулятора в начальное положение
 void Initial_Pos(void)
 {
   SERVO_1 = InitPosition_1;
   SERVO_2 = InitPosition_2;
   SERVO_3 = InitPosition_3;
 }
-// Функция устанавливает позицию вала (в градусах)
+// Функция задания позиции вала в градусах
 volatile uint16_t pulse = 0;
-void Motion(uint8_t *angle) 
+void Motion(uint8_t *data_from_usart) 
 {
-  pulse = angle[0]*(SERVO_60 - SERVO_0) /60;
+  pulse = data_from_usart[0]*(SERVO_60 - SERVO_0) / MAX_DATA;
   TIM_SetCompare1(TIM3, pulse);
   SERVO_1 = pulse + SERVO_0;
   
-  pulse = angle[1]*(SERVO_60 - SERVO_0) /60;
-  TIM_SetCompare2(TIM3, pulse);
+  pulse = data_from_usart[1]*(SERVO_60 - SERVO_0) / MAX_DATA;
+  TIM_SetCompare3(TIM3, pulse);
   SERVO_2 = pulse + SERVO_0;
   
-  pulse = angle[2]*(SERVO_60 - SERVO_0) /60;
-  TIM_SetCompare3(TIM3, pulse);
+  pulse = data_from_usart[2]*(SERVO_60 - SERVO_0) / MAX_DATA;
+  TIM_SetCompare4(TIM3, pulse);
   SERVO_3 = pulse + SERVO_0;
 }
-// Функция пересчета показаний с резисторов в углы
-void Array_Conv (uint8_t *buffer)
-{
-  for (int i = 0; i < 3; i++)
-  buffer[i] /= SERVO_MAX_ANGLE;
-}
+
 int main(void)
 {
   usart_init();
   dma_usart_init();
   Set_Pin();
 	Set_Timer();
-	int delay = 50;	 
+//  Delay(500);
   Initial_Pos();
 	while(1)
 	{
