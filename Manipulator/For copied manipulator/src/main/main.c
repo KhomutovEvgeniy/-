@@ -193,7 +193,7 @@ void Set_Timer()
 	TIM_OCStructInit(&TIM_PWM);
 	TIM_PWM.TIM_OCMode = TIM_OCMode_PWM1;                       // конфигурируем выход таймера, режим PWM1. Помимо PWM1 есть еще PWM2. Это всего лишь разные режимы ШИМ – с выравниванием по границе и по центру
 	TIM_PWM.TIM_OutputState = TIM_OutputState_Enable;           // выход включен
-	TIM_PWM.TIM_Pulse = SERVO_SHORTEST_PULSE;                   // чатсота ШИМ, заполнение, скважность.
+	TIM_PWM.TIM_Pulse = 0;                   // чатсота ШИМ, заполнение, скважность.
 	TIM_OC1Init(TIM3, &TIM_PWM);                                // заносим данные в 1-й канал (Поворотная ось основания)
   TIM_OC3Init(TIM3, &TIM_PWM);                                // заносим данные в 3-й канал (Плечо)
   TIM_OC4Init(TIM3, &TIM_PWM);                                // заносим данные в 4-й канал (Предплечье)
@@ -229,6 +229,7 @@ void Motion(uint8_t *data_from_usart)
   pulse = data_from_usart[2]*(SERVO_60 - SERVO_0) / MAX_DATA;
   TIM_SetCompare4(TIM3, pulse);
   SERVO_3 = pulse + SERVO_0;
+  for (int i = 0; i < 1000000; i++);
 }
 
 int main(void)
@@ -237,10 +238,17 @@ int main(void)
   dma_usart_init();
   Set_Pin();
 	Set_Timer();
-//  Delay(500);
+  Delay(500);
   Initial_Pos();
+  Delay(1500);
+
 	while(1)
 	{
+//    for(int i = 7; i < 22; i++)
+//    {
+//      TIM3->CCR3 = i * 100;
+//      Delay(1000);
+//    }
 	}
 }
 

@@ -199,6 +199,7 @@ int main(void)
   dma_usart_init();  
   while (1)
   {   
+    USART_SendData(USART1, 50);
   }
 }
 
