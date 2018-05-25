@@ -8,7 +8,7 @@
 #define SERVO_2_PIN GPIO_Pin_8
 #define SERVO_3_PIN GPIO_Pin_9
 
-#define SERVO_60 2100
+#define SERVO_60 2200
 #define SERVO_0 900
 
 #define SERVO_MAX_ANGLE 60
@@ -218,18 +218,19 @@ void Initial_Pos(void)
 volatile uint16_t pulse = 0;
 void Motion(uint8_t *data_from_usart) 
 {
-  pulse = data_from_usart[0]*(SERVO_60 - SERVO_0) / MAX_DATA;
+  pulse = data_from_usart[0]*(SERVO_60 - 800) / 252;
   TIM_SetCompare1(TIM3, pulse);
   SERVO_1 = pulse + SERVO_0;
-  
+    for (int i = 0; i < 10000; i++);
+
   pulse = data_from_usart[1]*(SERVO_60 - SERVO_0) / MAX_DATA;
   TIM_SetCompare3(TIM3, pulse);
   SERVO_2 = pulse + SERVO_0;
   
-  pulse = data_from_usart[2]*(SERVO_60 - SERVO_0) / MAX_DATA;
-  TIM_SetCompare4(TIM3, pulse);
-  SERVO_3 = pulse + SERVO_0;
-  for (int i = 0; i < 1000000; i++);
+//  pulse = data_from_usart[2]*(SERVO_60 - SERVO_0) / MAX_DATA;
+//  TIM_SetCompare4(TIM3, pulse);
+//  SERVO_3 = pulse + SERVO_0;
+  for (int i = 0; i < 10000; i++);
 }
 
 int main(void)
