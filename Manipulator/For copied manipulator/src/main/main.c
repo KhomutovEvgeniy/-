@@ -36,20 +36,13 @@
 Что есть 20000 отрезков по 1 мкс.
 Следовательно период 20 мс(50 Гц).
 
-Ширина управляющего импульса от 800 мкс (0°) до 2000 мкс (60°)
+Ширина управляющего импульса от 900 мкс (0°) до 2200 мкс (60°)
 
 Частота импульсов переменной ширины: 20 мс(50 Гц)
 
 Диапазон вращения: 60`
 
-На один градус поворота 2100-900/60 = 20 мкс
-
-Известно: 
-1650 мкс - 0`
-2200 мкс - 30` по часовой
-800 мкс - 30` против часовой
-
-Класть в регистр сравнения число, равное 30(800 мкс / 20 мкс) + задаваемый угол.
+Класть в регистр сравнения число, равное = значение резистора * (1300 мкс / 255) + начальное значение ШИМа.
 
 Регистр сравнения лучше обновлять строго в момент окончания периода во избежание дёргания сервы
 
@@ -84,21 +77,7 @@ void usart_init (void)
 
   /* Configure the USART1 */
   USART_InitTypeDef USART_InitStructure;
-
-/* USART1 configuration ------------------------------------------------------*/
-  /* USART1 configured as follow:
-        - BaudRate = 115200 baud
-        - Word Length = 8 Bits
-        - One Stop Bit
-        - No parity
-        - Hardware flow control disabled (RTS and CTS signals)
-        - Receive and transmit enabled
-        - USART Clock disabled
-        - USART CPOL: Clock is active low
-        - USART CPHA: Data is captured on the middle
-        - USART LastBit: The clock pulse of the last data bit is not output to
-                         the SCLK pin
-  */
+  // USART1 configuration
   USART_InitStructure.USART_BaudRate = 115200;
   USART_InitStructure.USART_WordLength = USART_WordLength_8b;
   USART_InitStructure.USART_StopBits = USART_StopBits_1;
@@ -193,7 +172,7 @@ void Set_Timer()
 	TIM_OCStructInit(&TIM_PWM);
 	TIM_PWM.TIM_OCMode = TIM_OCMode_PWM1;                       // конфигурируем выход таймера, режим PWM1. Помимо PWM1 есть еще PWM2. Это всего лишь разные режимы ШИМ – с выравниванием по границе и по центру
 	TIM_PWM.TIM_OutputState = TIM_OutputState_Enable;           // выход включен
-	TIM_PWM.TIM_Pulse = 0;                   // чатсота ШИМ, заполнение, скважность.
+	TIM_PWM.TIM_Pulse = 0;                                      // Значение, с которым будет сравниваться
 	TIM_OC1Init(TIM3, &TIM_PWM);                                // заносим данные в 1-й канал (Поворотная ось основания)
   TIM_OC3Init(TIM3, &TIM_PWM);                                // заносим данные в 3-й канал (Плечо)
   TIM_OC4Init(TIM3, &TIM_PWM);                                // заносим данные в 4-й канал (Предплечье)
@@ -218,18 +197,19 @@ void Initial_Pos(void)
 volatile uint16_t pulse = 0;
 void Motion(uint8_t *data_from_usart) 
 {
-  pulse = data_from_usart[0]*(SERVO_60 - 800) / 252;
+  pulse = data_from_usart[0]*(SERVO_60 - SERVO_0) / MAX_DATA;
   TIM_SetCompare1(TIM3, pulse);
   SERVO_1 = pulse + SERVO_0;
-    for (int i = 0; i < 10000; i++);
+  for (int i = 0; i < 10000; i++); // Задержка, ее необходимость надо проверить
 
   pulse = data_from_usart[1]*(SERVO_60 - SERVO_0) / MAX_DATA;
   TIM_SetCompare3(TIM3, pulse);
   SERVO_2 = pulse + SERVO_0;
+  for (int i = 0; i < 10000; i++);
   
-//  pulse = data_from_usart[2]*(SERVO_60 - SERVO_0) / MAX_DATA;
-//  TIM_SetCompare4(TIM3, pulse);
-//  SERVO_3 = pulse + SERVO_0;
+  pulse = data_from_usart[2]*(SERVO_60 - SERVO_0) / MAX_DATA;
+  TIM_SetCompare4(TIM3, pulse);
+  SERVO_3 = pulse + SERVO_0;
   for (int i = 0; i < 10000; i++);
 }
 
@@ -242,14 +222,8 @@ int main(void)
   Delay(500);
   Initial_Pos();
   Delay(1500);
-
 	while(1)
 	{
-//    for(int i = 7; i < 22; i++)
-//    {
-//      TIM3->CCR3 = i * 100;
-//      Delay(1000);
-//    }
 	}
 }
 

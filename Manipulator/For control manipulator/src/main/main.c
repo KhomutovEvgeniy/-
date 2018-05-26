@@ -6,15 +6,11 @@
 #include "misc.h"
 #include "stdio.h"
 
-#define Resistor_PORT1 GPIOA
-#define Resistor_PORT2 GPIOC
+#define Resistor_PORT GPIOA
 #define USART1_PORT_Tx GPIOA
-#define USART1_PORT_Rx GPIOA
 #define RES_1_PIN GPIO_Pin_0
 #define RES_2_PIN GPIO_Pin_1
 #define RES_3_PIN GPIO_Pin_4
-#define RES_4_PIN GPIO_Pin_1
-#define RES_5_PIN GPIO_Pin_0
 
 // Преобразованный массив показаний для отправки по USART1
 static volatile uint8_t USART_buffer[] = {0, 0, 0};
@@ -33,7 +29,7 @@ void DMA1_Channel1_IRQHandler(void);
 void usart_init (void)
 {
   /* Enable USART1 and GPIOA PORT */
-  RCC_APB2PeriphClockCmd (RCC_APB2Periph_GPIOA, ENABLE); //Разрешить тактирование ножки Tx
+  RCC_APB2PeriphClockCmd (RCC_APB2Periph_GPIOA, ENABLE); //Разрешить тактирование ножки Tx - USART1
   RCC_APB2PeriphClockCmd (RCC_APB2Periph_USART1, ENABLE); //Разрешить тактирование USART1
   /* Configure the GPIOs */
   GPIO_InitTypeDef GPIO_InitStructure;
@@ -45,30 +41,15 @@ void usart_init (void)
   GPIO_Init(USART1_PORT_Tx, &GPIO_InitStructure);
 
   /* Configure the USART1 */
-  USART_InitTypeDef USART_InitStructure;
-
-/* USART1 configuration ------------------------------------------------------*/
-  /* USART1 configured as follow:
-        - BaudRate = 115200 baud
-        - Word Length = 8 Bits
-        - One Stop Bit
-        - No parity
-        - Hardware flow control disabled (RTS and CTS signals)
-        - Receive and transmit enabled
-        - USART Clock disabled
-        - USART CPOL: Clock is active low
-        - USART CPHA: Data is captured on the middle
-        - USART LastBit: The clock pulse of the last data bit is not output to
-                         the SCLK pin
-  */
-  USART_InitStructure.USART_BaudRate = 115200;
-  USART_InitStructure.USART_WordLength = USART_WordLength_8b;
-  USART_InitStructure.USART_StopBits = USART_StopBits_1;
-  USART_InitStructure.USART_Parity = USART_Parity_No;
-  USART_InitStructure.USART_HardwareFlowControl = USART_HardwareFlowControl_None;
-  USART_InitStructure.USART_Mode = USART_Mode_Tx;
-  USART_Init(USART1, &USART_InitStructure);
-  USART_Cmd(USART1, ENABLE); //Enable USART1
+  USART_InitTypeDef USART_InitStructure;                                          // Структура для инициализации порта USART
+  USART_InitStructure.USART_BaudRate = 115200;                                    // Скорость передачи данных
+  USART_InitStructure.USART_WordLength = USART_WordLength_8b;                     // Количество передаваемых бит в кадре
+  USART_InitStructure.USART_StopBits = USART_StopBits_1;                          // Количество стоп-битов 1
+  USART_InitStructure.USART_Parity = USART_Parity_No;                             // Проверка четности - отключена
+  USART_InitStructure.USART_HardwareFlowControl = USART_HardwareFlowControl_None; // Аппаратное управление потоком - выключено
+  USART_InitStructure.USART_Mode = USART_Mode_Tx;                                 // Включение режима передачи данных
+  USART_Init(USART1, &USART_InitStructure);                                       // Инициализация порта USART1
+  USART_Cmd(USART1, ENABLE);                                                      // Enable USART1
 }
 
 void dma_usart_init (void)
@@ -77,74 +58,56 @@ void dma_usart_init (void)
   RCC_AHBPeriphClockCmd (RCC_AHBPeriph_DMA1, ENABLE); 
   
   // Настройка модуля DMA1 - из буфера на USART1
-  DMA_InitTypeDef DMA_InitStructure;
-  DMA_StructInit(&DMA_InitStructure);
-  DMA_InitStructure.DMA_MemoryInc = DMA_MemoryInc_Enable;
-  DMA_InitStructure.DMA_MemoryDataSize = DMA_MemoryDataSize_Byte;
-  DMA_InitStructure.DMA_MemoryBaseAddr = (uint32_t) USART_buffer;
-  DMA_InitStructure.DMA_PeripheralInc = DMA_PeripheralInc_Disable;
-  DMA_InitStructure.DMA_PeripheralDataSize = DMA_PeripheralDataSize_Byte;
-  DMA_InitStructure.DMA_PeripheralBaseAddr = (uint32_t) &(USART1->DR);
-  DMA_InitStructure.DMA_DIR = DMA_DIR_PeripheralDST;
-  DMA_InitStructure.DMA_BufferSize = sizeof(USART_buffer);
-  DMA_InitStructure.DMA_Mode = DMA_Mode_Circular;
-  DMA_Init(DMA1_Channel4, &DMA_InitStructure);	//4 канал - Tx USART1
-  
-  DMA_Cmd(DMA1_Channel4, ENABLE); //Включаем прямой доступ к памяти
-  // Активируем передачу в последовательный порт по запросу DMA 
-  USART_DMACmd(USART1, USART_DMAReq_Tx, ENABLE);   
+  DMA_InitTypeDef DMA_InitStructure;                                      // Структура для инициализации модуля DMA
+  DMA_StructInit(&DMA_InitStructure);                                     // Заполнение структуры по умолчанию
+  DMA_InitStructure.DMA_MemoryInc = DMA_MemoryInc_Enable;                 // Инкрементировать указателя на данные в памяти
+  DMA_InitStructure.DMA_MemoryDataSize = DMA_MemoryDataSize_Byte;         // Разммер единицы данных в памяти
+  DMA_InitStructure.DMA_MemoryBaseAddr = (uint32_t) USART_buffer;         // Адрес области памяти, куда необходимо положить данные (адрес нулевого элемента массива)
+  DMA_InitStructure.DMA_PeripheralInc = DMA_PeripheralInc_Disable;        // Не инкрементировать указателя на данные в периферии
+  DMA_InitStructure.DMA_PeripheralDataSize = DMA_PeripheralDataSize_Byte; // Размер единицы данных в перфиерии
+  DMA_InitStructure.DMA_PeripheralBaseAddr = (uint32_t) &(USART1->DR);    // Адрес регистра данных USART1
+  DMA_InitStructure.DMA_DIR = DMA_DIR_PeripheralDST;                      // Периферия является приемником назначения
+  DMA_InitStructure.DMA_BufferSize = sizeof(USART_buffer);                // Размер буффера
+  DMA_InitStructure.DMA_Mode = DMA_Mode_Circular;                         // Режим работы - по кругу (циклический)
+  DMA_Init(DMA1_Channel4, &DMA_InitStructure);	                          //4 канал DMA1 - Tx USART1
+  DMA_Cmd(DMA1_Channel4, ENABLE);                                         //Включаем прямой доступ к памяти DMA
+  USART_DMACmd(USART1, USART_DMAReq_Tx, ENABLE);                          // Активируем передачу в последовательный порт по запросу DMA 
 }
 
 void adc_init (void)
 {
-  // Разрешение тактирования портов А и С (К ним подключены резисторы)
-  RCC_APB2PeriphClockCmd(RCC_APB2Periph_GPIOA , ENABLE); 
-  // RCC_APB2PeriphClockCmd(RCC_APB2Periph_GPIOC , ENABLE); Отключен т.к. у имеющегося манипулятора только 3 степени подвижности
-  // Разрешение тактирования модуля АЦП1
-  RCC_APB2PeriphClockCmd (RCC_APB2Periph_ADC1, ENABLE);
-  // Предделитель АЦП (default)
+  RCC_APB2PeriphClockCmd(RCC_APB2Periph_GPIOA , ENABLE);            // Разрешение тактирования портов А и С (К ним подключены резисторы)
+  RCC_APB2PeriphClockCmd (RCC_APB2Periph_ADC1, ENABLE);             // Разрешение тактирования модуля ADC1
+  // Предделитель АЦП
 //  RCC_ADCCLKConfig(RCC_PCLK2_Div2);
   // Настройка АЦП (первые три степени свободы)
   GPIO_InitTypeDef GPIO_InitStructure1;
-  GPIO_InitStructure1.GPIO_Pin = RES_1_PIN | RES_2_PIN | RES_3_PIN;
-  GPIO_InitStructure1.GPIO_Mode = GPIO_Mode_AIN;
-  GPIO_Init (Resistor_PORT1, &GPIO_InitStructure1);
-/*
-  // Настройка АЦП (крайние две степени свободы)
-  GPIO_InitTypeDef GPIO_InitStructure2;
-  GPIO_InitStructure2.GPIO_Pin = RES_4_PIN || RES_5_PIN;
-  GPIO_InitStructure2.GPIO_Mode = GPIO_Mode_AIN;
-  GPIO_Init (Resistor_PORT2, &GPIO_InitStructure2);
-*/
+  GPIO_InitStructure1.GPIO_Pin = RES_1_PIN | RES_2_PIN | RES_3_PIN; // Номера пинов, к которым подведены переменные резисторы
+  GPIO_InitStructure1.GPIO_Mode = GPIO_Mode_AIN;                    // Необходимый режим работы - Analog Input
+  GPIO_Init (Resistor_PORT, &GPIO_InitStructure1);                  // Инициализация порта, к которому подведены переменные резисторы
+
   // Настройка АЦП
-  ADC_InitTypeDef ADC_InitStructure;
-  ADC_InitStructure.ADC_Mode = ADC_Mode_Independent; // Независимый режим (т.к. используем 1 АЦП)
-  ADC_InitStructure.ADC_ScanConvMode = ENABLE; // Сканирующий режим (т.к. сигнал будем снимать не с одной ножки)
-  ADC_InitStructure.ADC_ContinuousConvMode = ENABLE; // Циклическое сканирование
+  ADC_InitTypeDef ADC_InitStructure;                                  // Структура для инициализации модуля ADC
+  ADC_InitStructure.ADC_Mode = ADC_Mode_Independent;                  // Независимый режим (т.к. используем 1 АЦП)
+  ADC_InitStructure.ADC_ScanConvMode = ENABLE;                        // Сканирующий режим (т.к. сигнал будем снимать не с одной ножки)
+  ADC_InitStructure.ADC_ContinuousConvMode = ENABLE;                  // Циклическое сканирование
   ADC_InitStructure.ADC_ExternalTrigConv = ADC_ExternalTrigConv_None; // Источник запуска АЦП - нет  
-  ADC_InitStructure.ADC_DataAlign = ADC_DataAlign_Right; // Выравнимание битов по правому краю
-  ADC_InitStructure.ADC_NbrOfChannel = 3; // Количество каналов сканирования
+  ADC_InitStructure.ADC_DataAlign = ADC_DataAlign_Right;              // Выравнивание битов по правому краю
+  ADC_InitStructure.ADC_NbrOfChannel = 3;                             // Количество каналов сканирования
   
   // Определение регулярной группы сканирования АЦП  
   ADC_RegularChannelConfig(ADC1, ADC_Channel_0, 1, ADC_SampleTime_239Cycles5); // Время выборки для канала - 239.5 циклов
   ADC_RegularChannelConfig(ADC1, ADC_Channel_1, 2, ADC_SampleTime_239Cycles5);
   ADC_RegularChannelConfig(ADC1, ADC_Channel_4, 3, ADC_SampleTime_239Cycles5);
-//  ADC_RegularChannelConfig(ADC1, ADC_Channel_11, 4, ADC_SampleTime_239Cycles5);
-//  ADC_RegularChannelConfig(ADC1, ADC_Channel_10, 5, ADC_SampleTime_239Cycles5);
-  ADC_Init (ADC1, &ADC_InitStructure);
-  
-  // Запуск АЦП
-  ADC_Cmd(ADC1, ENABLE);
-  
-  // Включение DMA с ADC
-  ADC_DMACmd(ADC1, ENABLE); 
+  ADC_Init (ADC1, &ADC_InitStructure); // Инициализация модуля ADC1
+  ADC_Cmd(ADC1, ENABLE);               // Запуск АЦП
+  ADC_DMACmd(ADC1, ENABLE);            // Активация передачи в память запросу DMA с ADC1
   
   // Калибровка АЦП
-  while (ADC_GetResetCalibrationStatus(ADC1));
+  while (ADC_GetResetCalibrationStatus(ADC1)); // Сброс калибровки ADC1
   ADC_StartCalibration (ADC1);
   while (ADC_GetCalibrationStatus(ADC1));
-  // Запуск преобразований ADC
-  ADC_SoftwareStartConvCmd (ADC1, ENABLE); 
+  ADC_SoftwareStartConvCmd (ADC1, ENABLE); // Запуск преобразований ADC1
 }
 
 void dma_adc_init ()
@@ -164,8 +127,8 @@ void dma_adc_init ()
   DMA_InitStructure.DMA_BufferSize = sizeof(ADC_buffer);
   DMA_InitStructure.DMA_Mode = DMA_Mode_Circular;
   DMA_Init(DMA1_Channel1, &DMA_InitStructure);	//1 канал - ADC1
-  // Активация передачи в последовательный порт по запросу DMA 
-  DMA_Cmd(DMA1_Channel1, ENABLE); //Включаем прямой доступ к памяти
+  DMA_Cmd(DMA1_Channel1, ENABLE);               //Включаем прямой доступ к памяти
+  
   // Включение прерывания DMA по завершении цикла обработки
   DMA_ITConfig(DMA1_Channel1, DMA_IT_TC, ENABLE);
   NVIC_EnableIRQ(DMA1_Channel1_IRQn);  
@@ -178,7 +141,7 @@ void array_for_usart(void)
   for (int i = 0; i < 3; i++)
   {
     // alfa-betta filter (alfa = 0.3)
-    temp = USART_buffer[i] * (1 - 0.3) + 0.3 * (ADC_buffer[i] >> 4);
+    temp = USART_buffer[i] * (1 - 0.3) + 0.3 * (ADC_buffer[i] >> 4); // Сдвиг вправо на 4 - уменьшение размера числа до байта (т.к. USART отправляет по 1 байту) + доп фильтр + 
     USART_buffer[i] = temp;
   }
 }
@@ -186,9 +149,7 @@ void array_for_usart(void)
 // Обработчик прерывания по событию - DMA1 записал показания всех 3-x резисторов в буфер
 void DMA1_Channel1_IRQHandler(void)
 {   
-  array_for_usart();
-  // Сбрасывание флага прерывания
- // DMA_ClearITPendingBit(DMA1_IT_TC1);
+  array_for_usart(); // Обработка показаний с АЦП для отправки по USART
 }
 
 int main(void)
@@ -199,7 +160,6 @@ int main(void)
   dma_usart_init();  
   while (1)
   {   
-    //USART_SendData(USART1, 50);
   }
 }
 
