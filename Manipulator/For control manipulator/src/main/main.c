@@ -79,7 +79,7 @@ void adc_init (void)
   RCC_APB2PeriphClockCmd(RCC_APB2Periph_GPIOA , ENABLE);            // Разрешение тактирования портов А и С (К ним подключены резисторы)
   RCC_APB2PeriphClockCmd (RCC_APB2Periph_ADC1, ENABLE);             // Разрешение тактирования модуля ADC1
   // Предделитель АЦП
-//  RCC_ADCCLKConfig(RCC_PCLK2_Div2);
+  RCC_ADCCLKConfig(RCC_PCLK2_Div4);
   // Настройка АЦП (первые три степени свободы)
   GPIO_InitTypeDef GPIO_InitStructure1;
   GPIO_InitStructure1.GPIO_Pin = RES_1_PIN | RES_2_PIN | RES_3_PIN; // Номера пинов, к которым подведены переменные резисторы
@@ -140,6 +140,10 @@ void array_for_usart(void)
   float temp = 0;
   for (int i = 0; i < 3; i++)
   {
+//    if ( i == 2 && ADC_buffer[i] > 400)
+//    {
+//      ADC_buffer[i] -= 400;
+//    }
     // alfa-betta filter (alfa = 0.3)
     temp = USART_buffer[i] * (1 - 0.3) + 0.3 * (ADC_buffer[i] >> 4); // Сдвиг вправо на 4 - уменьшение размера числа до байта (т.к. USART отправляет по 1 байту) + доп фильтр + 
     USART_buffer[i] = temp;

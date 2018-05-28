@@ -200,13 +200,14 @@ void Motion(uint8_t *data_from_usart)
   pulse = data_from_usart[0]*(SERVO_60 - SERVO_0) / MAX_DATA;
   TIM_SetCompare1(TIM3, pulse);
   SERVO_1 = pulse + SERVO_0;
-  for (int i = 0; i < 10000; i++); // Задержка, ее необходимость надо проверить
+  //for (int i = 0; i < 10000; i++); // Задержка, ее необходимость надо проверить
 
   pulse = data_from_usart[1]*(SERVO_60 - SERVO_0) / MAX_DATA;
   TIM_SetCompare3(TIM3, pulse);
   SERVO_2 = pulse + SERVO_0;
-  for (int i = 0; i < 10000; i++);
+  // for (int i = 0; i < 10000; i++);
   
+//00000000
   pulse = data_from_usart[2]*(SERVO_60 - SERVO_0) / MAX_DATA;
   TIM_SetCompare4(TIM3, pulse);
   SERVO_3 = pulse + SERVO_0;
@@ -220,10 +221,16 @@ int main(void)
   Set_Pin();
 	Set_Timer();
   Delay(500);
-  Initial_Pos();
+  //Initial_Pos();
   Delay(1500);
 	while(1)
 	{
+//    for (int i = 8; i < 22; i++)
+//    {
+//      SERVO_1 = i * 100;
+//      Delay(1000);
+//    }
+//    
 	}
 }
 
