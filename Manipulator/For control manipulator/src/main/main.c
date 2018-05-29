@@ -126,8 +126,8 @@ void dma_adc_init ()
   DMA_InitStructure.DMA_DIR = DMA_DIR_PeripheralSRC;
   DMA_InitStructure.DMA_BufferSize = sizeof(ADC_buffer);
   DMA_InitStructure.DMA_Mode = DMA_Mode_Circular;
-  DMA_Init(DMA1_Channel1, &DMA_InitStructure);	//1 канал - ADC1
-  DMA_Cmd(DMA1_Channel1, ENABLE);               //Включаем прямой доступ к памяти
+  DMA_Init(DMA1_Channel1, &DMA_InitStructure);	//1 канал DMA1 соответствует взяимодействию с ADC1
+  DMA_Cmd(DMA1_Channel1, ENABLE);               //Включение прямого доступа к памяти
   
   // Включение прерывания DMA по завершении цикла обработки
   DMA_ITConfig(DMA1_Channel1, DMA_IT_TC, ENABLE);
@@ -140,10 +140,6 @@ void array_for_usart(void)
   float temp = 0;
   for (int i = 0; i < 3; i++)
   {
-//    if ( i == 2 && ADC_buffer[i] > 400)
-//    {
-//      ADC_buffer[i] -= 400;
-//    }
     // alfa-betta filter (alfa = 0.3)
     temp = USART_buffer[i] * (1 - 0.3) + 0.3 * (ADC_buffer[i] >> 4); // Сдвиг вправо на 4 - уменьшение размера числа до байта (т.к. USART отправляет по 1 байту) + доп фильтр + 
     USART_buffer[i] = temp;

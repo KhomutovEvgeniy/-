@@ -8,19 +8,17 @@
 #define SERVO_2_PIN GPIO_Pin_8
 #define SERVO_3_PIN GPIO_Pin_9
 
-#define SERVO_60 2200
-#define SERVO_0 900
+#define SERVO_60 2200 // Заполнение ШИМа, соответствующее максимальному повороту сервопривода
+#define SERVO_0 900   // Заполнение ШИМа, соответствующее минимальному повороту ШИМа
 
 #define SERVO_MAX_ANGLE 60
 #define SERVO_SHORTEST_PULSE 45
-#define MAX_DATA 255
+#define MAX_DATA 255            // Максимально принятое значени по USART
+
+#define Init_Position 1650 // Заполнение ШИМа, соответствующее начальному положению
 
 #define TIMER_PRESCALER 72
 #define TIMER_PERIOD 20000
-// Значения ШИМ для начального положения сервоприводов
-#define InitPosition_1 1650
-#define InitPosition_2 1650
-#define InitPosition_3 1650
 
 // Упрощенное обозначение каналов таймера под сервоприводы
 #define SERVO_1 TIM3->CCR1
@@ -76,16 +74,15 @@ void usart_init (void)
   GPIO_Init(USART1_PORT_Rx, &GPIO_InitStructure);
 
   /* Configure the USART1 */
-  USART_InitTypeDef USART_InitStructure;
-  // USART1 configuration
-  USART_InitStructure.USART_BaudRate = 115200;
-  USART_InitStructure.USART_WordLength = USART_WordLength_8b;
-  USART_InitStructure.USART_StopBits = USART_StopBits_1;
-  USART_InitStructure.USART_Parity = USART_Parity_No;
-  USART_InitStructure.USART_HardwareFlowControl = USART_HardwareFlowControl_None;
-  USART_InitStructure.USART_Mode = USART_Mode_Rx;
-  USART_Init(USART1, &USART_InitStructure);
-  USART_Cmd(USART1, ENABLE); //Enable USART1
+  USART_InitTypeDef USART_InitStructure;                                          // Структура для инициализации порта USART
+  USART_InitStructure.USART_BaudRate = 115200;                                    // Скорость передачи данных
+  USART_InitStructure.USART_WordLength = USART_WordLength_8b;                     // Количество передаваемых бит в кадре
+  USART_InitStructure.USART_StopBits = USART_StopBits_1;                          // Количество стоп-битов 1
+  USART_InitStructure.USART_Parity = USART_Parity_No;                             // Проверка четности - отключена
+  USART_InitStructure.USART_HardwareFlowControl = USART_HardwareFlowControl_None; // Аппаратное управление потоком - выключено
+  USART_InitStructure.USART_Mode = USART_Mode_Rx;                                 // Включение режима передачи данных
+  USART_Init(USART1, &USART_InitStructure);                                       // Инициализация порта USART1
+  USART_Cmd(USART1, ENABLE);                                                      
 }
 // Настройка модуля ДМА для забора данных, полученных по USART1
 void dma_usart_init (void)
@@ -93,24 +90,22 @@ void dma_usart_init (void)
   // Разрешение тактирвоания модуля DMA
   RCC_AHBPeriphClockCmd (RCC_AHBPeriph_DMA1, ENABLE); 
   
-  // Настройка модуля DMA1 - c USART1 в буфер
-  DMA_InitTypeDef DMA_InitStructure;
-  DMA_StructInit(&DMA_InitStructure);
-  DMA_InitStructure.DMA_MemoryInc = DMA_MemoryInc_Enable;
-  DMA_InitStructure.DMA_MemoryDataSize = DMA_MemoryDataSize_Byte;
-  DMA_InitStructure.DMA_MemoryBaseAddr = (uint32_t) USART_buffer;
-  DMA_InitStructure.DMA_PeripheralInc = DMA_PeripheralInc_Disable;
-  DMA_InitStructure.DMA_PeripheralDataSize = DMA_PeripheralDataSize_Byte;
-  DMA_InitStructure.DMA_PeripheralBaseAddr = (uint32_t) &(USART1->DR);
-  DMA_InitStructure.DMA_DIR = DMA_DIR_PeripheralSRC;
-  DMA_InitStructure.DMA_BufferSize = sizeof(USART_buffer);
-  DMA_InitStructure.DMA_Mode = DMA_Mode_Circular;
-  DMA_Init(DMA1_Channel5, &DMA_InitStructure);	//5 канал - Rx USART1
-   
-  DMA_Cmd(DMA1_Channel5, ENABLE); //Включаем прямой доступ к памяти
-  // Активируем передачу из USART в память
-  USART_DMACmd(USART1, USART_DMAReq_Rx, ENABLE); 
-  
+  // Настройка модуля DMA1 - c USART1 в буфер  
+  DMA_InitTypeDef DMA_InitStructure;                                      // Структура для инициализации модуля DMA
+  DMA_StructInit(&DMA_InitStructure);                                     // Заполнение структуры по умолчанию
+  DMA_InitStructure.DMA_MemoryInc = DMA_MemoryInc_Enable;                 // Инкрементировать указателя на данные в памяти
+  DMA_InitStructure.DMA_MemoryDataSize = DMA_MemoryDataSize_Byte;         // Разммер единицы данных в памяти
+  DMA_InitStructure.DMA_MemoryBaseAddr = (uint32_t) USART_buffer;         // Адрес области памяти, куда необходимо положить данные (адрес нулевого элемента массива)
+  DMA_InitStructure.DMA_PeripheralInc = DMA_PeripheralInc_Disable;        // Не инкрементировать указателя на данные в периферии
+  DMA_InitStructure.DMA_PeripheralDataSize = DMA_PeripheralDataSize_Byte; // Размер единицы данных в перфиерии
+  DMA_InitStructure.DMA_PeripheralBaseAddr = (uint32_t) &(USART1->DR);    // Адрес регистра данных USART1
+  DMA_InitStructure.DMA_DIR = DMA_DIR_PeripheralSRC;                      // Периферия является приемником назначения
+  DMA_InitStructure.DMA_BufferSize = sizeof(USART_buffer);                // Размер буффера
+  DMA_InitStructure.DMA_Mode = DMA_Mode_Circular;                         // Режим работы - по кругу (циклический)
+  DMA_Init(DMA1_Channel5, &DMA_InitStructure);	                          // 4 канал DMA1 - Tx USART1
+  DMA_Cmd(DMA1_Channel5, ENABLE);                                         // Включаем прямой доступ к памяти DMA
+  USART_DMACmd(USART1, USART_DMAReq_Rx, ENABLE);                          // Активируем передачу в последовательный порт по запросу DMA 
+
   // Установка прерываний от DMA по окончании приема 
   DMA_ITConfig(DMA1_Channel5, DMA_IT_TC, ENABLE);
   NVIC_EnableIRQ(DMA1_Channel5_IRQn);  
@@ -143,13 +138,13 @@ void SysTick_Handler(void)
  // Настройка подключения периферии
 void Set_Pin()                                          
 {
-  RCC_APB2PeriphClockCmd(RCC_APB2Periph_GPIOC , ENABLE); // Тактируем порт С, к нему будем подключать сервоприводы
-  // Настроим ножки, к которым подключены сервоприводы в режим Alternate function
+  RCC_APB2PeriphClockCmd(RCC_APB2Periph_GPIOC , ENABLE); // Тактируем порт С, к которому подключены сервоприводы
+  // Настройка ножек, к которым подключены сервоприводы, в режим Alternate function
   GPIO_InitTypeDef GPIO_InitStructure;                 
   GPIO_StructInit(&GPIO_InitStructure);
 	GPIO_InitStructure.GPIO_Speed = GPIO_Speed_2MHz;
-	GPIO_InitStructure.GPIO_Mode = GPIO_Mode_AF_PP;                         // Будем использовать альтернативный режим
-	GPIO_InitStructure.GPIO_Pin = SERVO_1_PIN | SERVO_2_PIN | SERVO_3_PIN;  // Настроим ножки, к которым подключены сервоприводы в режим Alternate function
+	GPIO_InitStructure.GPIO_Mode = GPIO_Mode_AF_PP;                         // Необходим альтернативный режим, т.к. управлять сервоприводами будем с помощью ШИМа
+	GPIO_InitStructure.GPIO_Pin = SERVO_1_PIN | SERVO_2_PIN | SERVO_3_PIN;  // Настройка ножек к которым подключены сервоприводы в режим Alternate function
   GPIO_Init(SERVO_PORT, &GPIO_InitStructure);
 }
 
@@ -159,27 +154,27 @@ void Set_Timer()
   // Включаем альтернативный режим
   RCC_APB2PeriphClockCmd(RCC_APB2Periph_AFIO, ENABLE);
   GPIO_PinRemapConfig(GPIO_FullRemap_TIM3, ENABLE);
-	// настройка базового таймера
-	RCC_APB1PeriphClockCmd(RCC_APB1Periph_TIM3, ENABLE);       //Тактируем Таймер 3                               
-	TIM_TimeBaseInitTypeDef TIM;                               // создаем экземпляр структуры, которая задает частоту через предделитель
-  TIM_TimeBaseStructInit(&TIM);                              // заполняем структуру значениями по умолчанию
-	TIM.TIM_Prescaler = TIMER_PRESCALER;                       // задаем предделитель таймера
-	TIM.TIM_Period = TIMER_PERIOD;                             // период ШИМ, такой, чтобы частота 50 Гц.
-	TIM_TimeBaseInit(TIM3, &TIM);                              // инициализируем таймер
+	//Настройка базового таймера
+	RCC_APB1PeriphClockCmd(RCC_APB1Periph_TIM3, ENABLE);       // Тактируем Таймер 3                               
+	TIM_TimeBaseInitTypeDef TIM;                               // Создаем экземпляр структуры, которая задает частоту через предделитель
+  TIM_TimeBaseStructInit(&TIM);                              // Заполняем структуру значениями по умолчанию
+	TIM.TIM_Prescaler = TIMER_PRESCALER;                       // Задаем предделитель таймера
+	TIM.TIM_Period = TIMER_PERIOD;                             // Период ШИМ, такой, чтобы частота 50 Гц.
+	TIM_TimeBaseInit(TIM3, &TIM);                              // Инициализируем таймер
 	
 	// настройка ШИМа. Настройка канала.  начальное заполнение: 90 тиков (900 мкс)
-	TIM_OCInitTypeDef TIM_PWM;                                  // конфигурация выхода таймера. Структура для генерации ШИМ
+	TIM_OCInitTypeDef TIM_PWM;                                  // Конфигурация выхода таймера. Структура для генерации ШИМ
 	TIM_OCStructInit(&TIM_PWM);
-	TIM_PWM.TIM_OCMode = TIM_OCMode_PWM1;                       // конфигурируем выход таймера, режим PWM1. Помимо PWM1 есть еще PWM2. Это всего лишь разные режимы ШИМ – с выравниванием по границе и по центру
-	TIM_PWM.TIM_OutputState = TIM_OutputState_Enable;           // выход включен
+	TIM_PWM.TIM_OCMode = TIM_OCMode_PWM1;                       // Конфигурируем выхода таймера в режим PWM1. Помимо PWM1 есть еще PWM2. Это всего лишь разные режимы ШИМ – с выравниванием по границе и по центру
+	TIM_PWM.TIM_OutputState = TIM_OutputState_Enable;           // Включение выход
 	TIM_PWM.TIM_Pulse = 0;                                      // Значение, с которым будет сравниваться
-	TIM_OC1Init(TIM3, &TIM_PWM);                                // заносим данные в 1-й канал (Поворотная ось основания)
-  TIM_OC3Init(TIM3, &TIM_PWM);                                // заносим данные в 3-й канал (Плечо)
-  TIM_OC4Init(TIM3, &TIM_PWM);                                // заносим данные в 4-й канал (Предплечье)
+	TIM_OC1Init(TIM3, &TIM_PWM);                                // Конфигурация 1-го канала (Поворотная ось основания)
+  TIM_OC3Init(TIM3, &TIM_PWM);                                // Конфигурация 3-го канала (Плечо)
+  TIM_OC4Init(TIM3, &TIM_PWM);                                // Конфигурация 4-го канала (Предплечье)
   	
 	// разрешение прерываний и работы таймера
-	TIM_ITConfig(TIM3, TIM_IT_Update, ENABLE);                  // режим генерации прерывания по обновлению, переполнению
-	TIM_Cmd(TIM3, ENABLE);                                      // запуск таймера
+	TIM_ITConfig(TIM3, TIM_IT_Update, ENABLE);                  // Режим генерации прерывания по обновлению, переполнению
+	TIM_Cmd(TIM3, ENABLE);                                      // Запуск таймера
 	
 	// настройка системного таймера
 	__disable_irq();
@@ -189,25 +184,22 @@ void Set_Timer()
 // Функция установки манипулятора в начальное положение
 void Initial_Pos(void)
 {
-  SERVO_1 = InitPosition_1;
-  SERVO_2 = InitPosition_2;
-  SERVO_3 = InitPosition_3;
+  SERVO_1 = Init_Position;
+  SERVO_2 = Init_Position;
+  SERVO_3 = Init_Position;
 }
-// Функция задания позиции вала в градусах
+// Функция задания позиции манипулятора
 volatile uint16_t pulse = 0;
 void Motion(uint8_t *data_from_usart) 
 {
-  pulse = data_from_usart[0]*(SERVO_60 - SERVO_0) / MAX_DATA;
+  pulse = data_from_usart[0]*(SERVO_60 - SERVO_0) / MAX_DATA; // Расчет отклонения положения сервопривода от нулевого положения
   TIM_SetCompare1(TIM3, pulse);
   SERVO_1 = pulse + SERVO_0;
-  //for (int i = 0; i < 10000; i++); // Задержка, ее необходимость надо проверить
 
   pulse = data_from_usart[1]*(SERVO_60 - SERVO_0) / MAX_DATA;
   TIM_SetCompare3(TIM3, pulse);
   SERVO_2 = pulse + SERVO_0;
-  // for (int i = 0; i < 10000; i++);
   
-//00000000
   pulse = data_from_usart[2]*(SERVO_60 - SERVO_0) / MAX_DATA;
   TIM_SetCompare4(TIM3, pulse);
   SERVO_3 = pulse + SERVO_0;
@@ -221,16 +213,10 @@ int main(void)
   Set_Pin();
 	Set_Timer();
   Delay(500);
-  //Initial_Pos();
+  Initial_Pos();
   Delay(1500);
 	while(1)
 	{
-//    for (int i = 8; i < 22; i++)
-//    {
-//      SERVO_1 = i * 100;
-//      Delay(1000);
-//    }
-//    
 	}
 }
 
