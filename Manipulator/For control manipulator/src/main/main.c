@@ -13,9 +13,9 @@
 #define RES_3_PIN GPIO_Pin_4
 
 // Преобразованный массив показаний для отправки по USART1
-static volatile uint8_t USART_buffer[] = {0, 0, 0};
+static volatile uint8_t USART_buffer[] = {0};
 // Массив (буфер) показаний резисторов, считывающихся с ADC
-static volatile uint16_t ADC_buffer[] = {0, 0, 0};
+static volatile uint16_t ADC_buffer[] = {0};
 // static volatile uint32_t timeStampMs = 0; Необ для задержки
 
 // Local functions prototype
@@ -42,7 +42,7 @@ void usart_init (void)
 
   /* Configure the USART1 */
   USART_InitTypeDef USART_InitStructure;                                          // Структура для инициализации порта USART
-  USART_InitStructure.USART_BaudRate = 115200;                                    // Скорость передачи данных
+  USART_InitStructure.USART_BaudRate = 9600;                                     // Скорость передачи данных
   USART_InitStructure.USART_WordLength = USART_WordLength_8b;                     // Количество передаваемых бит в кадре
   USART_InitStructure.USART_StopBits = USART_StopBits_1;                          // Количество стоп-битов 1
   USART_InitStructure.USART_Parity = USART_Parity_No;                             // Проверка четности - отключена
@@ -82,7 +82,7 @@ void adc_init (void)
   RCC_ADCCLKConfig(RCC_PCLK2_Div4);
   // Настройка АЦП (первые три степени свободы)
   GPIO_InitTypeDef GPIO_InitStructure1;
-  GPIO_InitStructure1.GPIO_Pin = RES_1_PIN | RES_2_PIN | RES_3_PIN; // Номера пинов, к которым подведены переменные резисторы
+  GPIO_InitStructure1.GPIO_Pin = RES_1_PIN;                         // Номера пинов, к которым подведены переменные резисторы
   GPIO_InitStructure1.GPIO_Mode = GPIO_Mode_AIN;                    // Необходимый режим работы - Analog Input
   GPIO_Init (Resistor_PORT, &GPIO_InitStructure1);                  // Инициализация порта, к которому подведены переменные резисторы
 
@@ -93,12 +93,12 @@ void adc_init (void)
   ADC_InitStructure.ADC_ContinuousConvMode = ENABLE;                  // Циклическое сканирование
   ADC_InitStructure.ADC_ExternalTrigConv = ADC_ExternalTrigConv_None; // Источник запуска АЦП - нет  
   ADC_InitStructure.ADC_DataAlign = ADC_DataAlign_Right;              // Выравнивание битов по правому краю
-  ADC_InitStructure.ADC_NbrOfChannel = 3;                             // Количество каналов сканирования
+  ADC_InitStructure.ADC_NbrOfChannel = 1;                             // Количество каналов сканирования
   
   // Определение регулярной группы сканирования АЦП  
   ADC_RegularChannelConfig(ADC1, ADC_Channel_0, 1, ADC_SampleTime_239Cycles5); // Время выборки для канала - 239.5 циклов
-  ADC_RegularChannelConfig(ADC1, ADC_Channel_1, 2, ADC_SampleTime_239Cycles5);
-  ADC_RegularChannelConfig(ADC1, ADC_Channel_4, 3, ADC_SampleTime_239Cycles5);
+//  ADC_RegularChannelConfig(ADC1, ADC_Channel_1, 2, ADC_SampleTime_239Cycles5);
+//  ADC_RegularChannelConfig(ADC1, ADC_Channel_4, 3, ADC_SampleTime_239Cycles5);
   ADC_Init (ADC1, &ADC_InitStructure); // Инициализация модуля ADC1
   ADC_Cmd(ADC1, ENABLE);               // Запуск АЦП
   ADC_DMACmd(ADC1, ENABLE);            // Активация передачи в память запросу DMA с ADC1
@@ -138,7 +138,7 @@ void dma_adc_init ()
 void array_for_usart(void)
 {
   float temp = 0;
-  for (int i = 0; i < 3; i++)
+  for (int i = 0; i < 1; i++)
   {
     // alfa-betta filter (alfa = 0.3)
     temp = USART_buffer[i] * (1 - 0.3) + 0.3 * (ADC_buffer[i] >> 4); // Сдвиг вправо на 4 - уменьшение размера числа до байта (т.к. USART отправляет по 1 байту) + доп фильтр + 
@@ -155,9 +155,11 @@ void DMA1_Channel1_IRQHandler(void)
 int main(void)
 {
   adc_init();
-  dma_adc_init();
   usart_init();
   dma_usart_init();  
+
+  dma_adc_init();
+
   while (1)
   {   
   }
